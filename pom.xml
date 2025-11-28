@@ -13,7 +13,7 @@
     <maven.compiler.source>21</maven.compiler.source>
     <maven.compiler.target>21</maven.compiler.target>
     <jackson.version>2.17.0</jackson.version>
-    <spring.version>7.0.0</spring.version>
+    <spring.version>6.2.10</spring.version>
     <h2.version>2.3.232</h2.version>
     <postgres.version>42.7.5</postgres.version>
     <spring.data.jdbc.version>4.0.0</spring.data.jdbc.version>
