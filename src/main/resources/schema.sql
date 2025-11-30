@@ -9,8 +9,8 @@ CREATE TABLE IF NOT EXISTS posts
     created_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT pk_posts PRIMARY KEY (id),
-    CONSTRAINT chk_posts_likes_count CHECK (likes_count > 0),
-    CONSTRAINT chk_posts_comments_count CHECK (comments_count > 0)
+    CONSTRAINT chk_posts_likes_count CHECK (likes_count >= 0),
+    CONSTRAINT chk_posts_comments_count CHECK (comments_count >= 0)
 );
 
 CREATE TABLE IF NOT EXISTS tags
