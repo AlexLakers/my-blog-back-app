@@ -12,5 +12,6 @@ public interface PostRepository {
     boolean delete(Long id);
     boolean update(Post post);
     Page<Post> findAll(Criteria criteria);
-    Long incrementLikesCount();
+    Long incrementLikesCount(Long postId);
+    boolean updateImagePath(Long postId, String imagePath);
 }
