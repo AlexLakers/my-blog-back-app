@@ -67,7 +67,11 @@ public class JdbcNativePostRepositoryImpl implements PostRepository {
 
     @Override
     public boolean updateImagePath(Long postId, String imagePath) {
-        return false;
+        String sqlUpdate = """
+                UPDATE posts SET image_path = ?
+                WHERE id = ?
+                """;
+        return jdbcTemplate.update(sqlUpdate, postId, imagePath) > 0;
     }
 
     private RowMapper<Post> getRowMapperForPostWithoutTags() {
