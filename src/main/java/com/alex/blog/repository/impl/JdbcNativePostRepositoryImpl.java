@@ -61,12 +61,6 @@ public class JdbcNativePostRepositoryImpl implements PostRepository {
 
 
     @Override
-    public Page<Post> findAll(Criteria criteria) {
-        return null;
-    }
-
-
-    @Override
     public Long incrementLikesCount(Long postId) {
         String sql = """
                 UPDATE posts SET likes_count = likes_count + 1
@@ -89,6 +83,23 @@ public class JdbcNativePostRepositoryImpl implements PostRepository {
                 WHERE id = ?
                 """;
         return jdbcTemplate.update(sqlUpdate, postId, imagePath) > 0;
+    }
+
+    @Override
+    public Long incrementCommentsCount(Long postId) {
+        String sql= """
+                    UPDATE posts
+                    SET  comments_count=comments_count+1
+                    WHERE id=?
+                """;
+        KeyHolder keyHolder = new GeneratedKeyHolder();
+        jdbcTemplate.update(conn -> {
+            var ps = conn.prepareStatement(sql, new String[]{"comments_count"});
+            ps.setLong(1, postId);
+            return ps;
+        }, keyHolder);
+
+        return (Long) keyHolder.getKeyList().getFirst().get("comments_count");
     }
 
     private RowMapper<Post> getRowMapperForPostWithoutTags() {
