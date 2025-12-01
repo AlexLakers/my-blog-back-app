@@ -227,4 +227,53 @@ public class JdbcNativePostRepositoryImpl implements PostRepository {
 
 
 
-}
+
+//CASE WHEN length (p.content) >128 THEN SUBSTRING(p.conent,1,25) || '...' ELSE p.content todo
+        public Page<Post> findAll(Criteria criteria) {
+            MapSqlParameterSource sqlParameterSource = new MapSqlParameterSource("tags", criteria.tags());
+            sqlParameterSource.addValue("title", criteria.title());
+
+            String sqlCount = new QueryBuilder("SELECT COUNT (DISTINCT p.id) FROM posts p")
+                    .addJoinIf(criteria.hasTags(),
+                            "JOIN posts_tags pt ON p.id = pt.post_id JOIN tags t ON pt.tag_id = t.id")
+                    .addConditionIf(criteria.hasTags(), "t.name IN (:tags)",
+                            () -> sqlParameterSource.addValue("tags", criteria.tags()))
+                    .addConditionIf(criteria.hasTitle(), "p.title LIKE :title",
+                            () -> sqlParameterSource.addValue("title", "%" + criteria.title() + "%"))
+                    .build();
+
+
+            Long countElements = namedParameterJdbcTemplate.queryForObject(sqlCount, sqlParameterSource, Long.class);
+            Integer offset = criteria.pageNumber() * criteria.pageSize();
+
+            sqlParameterSource.addValue("limit", criteria.pageSize());
+            sqlParameterSource.addValue("offset", offset);
+            sqlParameterSource.addValue("title", criteria.title());
+
+            QueryBuilder queryBuilder = new QueryBuilder("""
+                SELECT DISTINCT p.id,p.title," +
+                "CASE WHEN length (p.text) >128 THEN SUBSTRING(p.text,1,128) || '...' ELSE p.text END FROM posts p")
+                """);
+            String sqlSelect = queryBuilder
+                    .addJoinIf(criteria.hasTags(),
+                            "JOIN posts_tags pt ON p.id = pt.post_id JOIN tags t ON pt.tag_id = t.id")
+                    .addConditionIf(criteria.hasTags(), "t.name IN (:tags)",
+                            () -> sqlParameterSource.addValue("tags", criteria.tags()))
+                    .addConditionIf(criteria.hasTitle(), "p.title LIKE :title",
+                            () -> sqlParameterSource.addValue("title", "%" + criteria.title() + "%"))
+                    .append(" ORDER BY p.created_at DESC LIMIT :limit OFFSET :offset")
+                    .build();
+            List<Post> content = namedParameterJdbcTemplate.query(sqlSelect, sqlParameterSource, getRowMapperForPostWithoutTags());
+
+            var page = new PageImpl<>(content,
+                    PageRequest.of(criteria.pageNumber(), criteria.pageSize()), countElements);
+
+
+            return page;
+
+        }
+
+
+
+
+    }
