@@ -62,7 +62,18 @@ public class JdbcNativePostRepositoryImpl implements PostRepository {
 
     @Override
     public Long incrementLikesCount(Long postId) {
-        return 0L;
+        String sql = """
+                UPDATE posts SET likes_count = likes_count + 1
+                WHERE id = ?
+                """;
+        KeyHolder keyHolder = new GeneratedKeyHolder();
+        jdbcTemplate.update(conn -> {
+            var ps = conn.prepareStatement(sql, new String[]{"likes_count"});
+            ps.setLong(1, postId);
+            return ps;
+        }, keyHolder);
+
+        return (Long) keyHolder.getKeyList().getFirst().get("likes_count");
     }
 
     @Override
