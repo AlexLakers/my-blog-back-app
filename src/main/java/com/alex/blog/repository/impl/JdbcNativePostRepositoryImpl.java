@@ -3,13 +3,21 @@ package com.alex.blog.repository.impl;
 import com.alex.blog.model.Post;
 import com.alex.blog.repository.PostRepository;
 import com.alex.blog.repository.Criteria;
+import com.alex.blog.repository.QueryBuilder;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+import org.springframework.jdbc.core.namedparam.SqlParameterSource;
+import org.springframework.jdbc.support.GeneratedKeyHolder;
+import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
+
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
@@ -48,6 +56,7 @@ public class JdbcNativePostRepositoryImpl implements PostRepository {
     @Override
     public boolean delete(Long id) {
         return false;
+                DELETE FROM posts WHERE id = ?
     }
 
     @Override
