@@ -1,13 +1,10 @@
-package com.alex.blog.repository;
-
-import org.springframework.stereotype.Component;
+package com.alex.blog.search;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class QueryBuilder {
-
+public final class QueryBuilder {
 
         private final StringBuilder baseSql;
         private final List<String> conditions = new ArrayList<>();

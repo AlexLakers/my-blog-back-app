@@ -1,4 +1,4 @@
-package com.alex.blog.repository;
+package com.alex.blog.search;
 
 import java.util.List;
 

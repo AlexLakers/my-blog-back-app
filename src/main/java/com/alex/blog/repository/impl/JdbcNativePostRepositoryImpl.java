@@ -2,8 +2,8 @@ package com.alex.blog.repository.impl;
 
 import com.alex.blog.model.Post;
 import com.alex.blog.repository.PostRepository;
-import com.alex.blog.repository.Criteria;
-import com.alex.blog.repository.QueryBuilder;
+import com.alex.blog.search.Criteria;
+import com.alex.blog.search.QueryBuilder;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.data.domain.Page;
@@ -30,33 +30,58 @@ public class JdbcNativePostRepositoryImpl implements PostRepository {
     private final JdbcTemplate jdbcTemplate;
     private final NamedParameterJdbcTemplate namedParameterJdbcTemplate;
 
-    @Override
+
     public Optional<Post> findById(Long id) {
         String sql = """
-                SELECT p.id, p.title, p.text, p.image_path, p.likes_count, p.comments_count,
-                       STRING_AGG(t.name, ',') AS tags
+                SELECT p.id, p.title, p.text, p.image_path, p.likes_count, p.comments_count
                 FROM posts AS p
-                LEFT JOIN posts_tags AS pt ON p.id = pt.post_id
-                LEFT JOIN tags AS t ON pt.tag_id = t.id
                 WHERE p.id = ?
-                GROUP BY p.id, p.title, p.text, p.image_path, p.likes_count, p.comments_count-- все поля Posts
                 """;
         try {
-            return Optional.ofNullable(jdbcTemplate.queryForObject(sql, getRowMapperForPostWithTags(), id));
+            Optional<Post> maybePost = Optional.ofNullable(jdbcTemplate.queryForObject(sql, getRowMapperPost(), id));
+
+            maybePost.ifPresent(post -> {
+                post.setTags(findTagsByPostId(post.getId()));
+            });
+            return maybePost;
+
         } catch (EmptyResultDataAccessException e) {
             return Optional.empty();
         }
 
     }
 
+    private List<String> findTagsByPostId(Long postId) {
+        String sql = """
+                SELECT t.name FROM tags AS t
+                JOIN posts_tags AS pt ON pt.tag_id = t.id
+                WHERE pt.post_id = ?
+                """;
+        return jdbcTemplate.query(sql, (rs, rc) -> rs.getString("name"), postId);
+    }
 
+    private RowMapper<Post> getRowMapperPost() {
+        return (rs, rc) -> {
+            Post post = new Post();
+            post.setId(rs.getLong(Post.Fields.id));
+            post.setTitle(rs.getString(Post.Fields.title));
+            post.setText(rs.getString(Post.Fields.text));
+            post.setLikesCount(rs.getLong("likes_count"));
+            post.setCommentsCount(rs.getLong("comments_count"));
+            return post;
+
+        };
+    }
+
+
+    //On service layer drop comments too(manual before cascade)
     @Override
-    public boolean delete(Long id) {
+    public void delete(Long id) {
         String sqlDelPosts = """
                 DELETE FROM posts WHERE id = ?
                 """;
 
-        return jdbcTemplate.update(sqlDelPosts, id) > 0;
+        jdbcTemplate.update(sqlDelPosts, id);
     }
 
 
@@ -77,17 +102,18 @@ public class JdbcNativePostRepositoryImpl implements PostRepository {
     }
 
     @Override
-    public boolean updateImagePath(Long postId, String imagePath) {
+    public void updateImagePath(Long postId, String imagePath) {
         String sqlUpdate = """
                 UPDATE posts SET image_path = ?
                 WHERE id = ?
                 """;
-        return jdbcTemplate.update(sqlUpdate, postId, imagePath) > 0;
+        jdbcTemplate.update(sqlUpdate, imagePath, postId);
     }
+
 
     @Override
     public Long incrementCommentsCount(Long postId) {
-        String sql= """
+        String sql = """
                     UPDATE posts
                     SET  comments_count=comments_count+1
                     WHERE id=?
@@ -102,67 +128,71 @@ public class JdbcNativePostRepositoryImpl implements PostRepository {
         return (Long) keyHolder.getKeyList().getFirst().get("comments_count");
     }
 
-    private RowMapper<Post> getRowMapperForPostWithoutTags() {
-        return (rs, rc) -> {
-            Post post = new Post();
-            post.setId(rs.getLong(Post.Fields.id));
-            post.setTitle(rs.getString(Post.Fields.title));
-            post.setText(rs.getString(Post.Fields.text));
-            post.setLikesCount(rs.getLong("likes_count"));
-            post.setCommentsCount(rs.getLong("comments_count"));
-            return post;
 
-        };
-    }
-
-    private RowMapper<Post> getRowMapperForPostWithTags() {
-        return (rs, rc) -> {
-            Post post = new Post();
-            post.setId(rs.getLong(Post.Fields.id));
-            post.setTitle(rs.getString(Post.Fields.title));
-            post.setText(rs.getString(Post.Fields.text));
-            post.setLikesCount(rs.getLong("likes_count"));
-            post.setCommentsCount(rs.getLong("comments_count"));
-            post.setTags(getTags(rs));
-            return post;
-
-        };
-    }
-
-    private List<String> getTags(ResultSet rs) throws SQLException {
-        return Optional.ofNullable(rs.getString(Post.Fields.tags))
-                .map(ts -> ts.split(","))
-                .map(Arrays::asList)
-                .orElseGet(Collections::emptyList);
-
-    }
     @Override
-    public boolean update(Post post) {
+    public Post update(Post post) {
+        insertTagsAndLinkUsingBatch(post.getId(), post.getTags());
+
         String sqlUpdate = """
                 UPDATE posts SET title=?, text=?
                 WHERE id=?
                 """;
 
-        Post updatedPost = execModifySqlWithFullReturn(post, sqlUpdate);
-
-
-        String sqlDelTags = """
-                DELETE FROM tags AS t
-                USING posts_tags AS pt
-                WHERE pt.tag_id=t.id
-                AND pt.post_id=?
-                """;
-
-        jdbcTemplate.update(sqlDelTags, post.getId());
-
-        insertTagsAndLink(updatedPost.getId(),post.getTags());
-
-        updatedPost.setTags(post.getTags());
-
-        return true;
+       // jdbcTemplate.update(sqlUpdate,post.getId());
+        return execModifySqlWithFullReturn(post,sqlUpdate);
     }
 
 
+
+    private void insertTagsAndLinkUsingBatch(Long postId, List<String> tags) {
+        String sqlDelete = """
+                DELETE FROM posts_tags
+                WHERE post_id=:postId
+                """;
+
+        jdbcTemplate.update(sqlDelete,postId);
+
+        SqlParameterSource[] batchArgsTags = tags.stream()
+                .map(tagName -> new MapSqlParameterSource("tagName", tagName))
+                .toArray(SqlParameterSource[]::new);
+
+        String sqlInsertTags = """
+                INSERT INTO tags (name)
+                SELECT :tagName
+                WHERE NOT EXISTS (SELECT 1 FROM tags WHERE name = :tagName)
+                """;
+
+        namedParameterJdbcTemplate.batchUpdate(sqlInsertTags, batchArgsTags);
+
+
+        SqlParameterSource[] batchArgsPostTag = tags.stream()
+                .map(tagName -> new MapSqlParameterSource()
+                        .addValue("postId", postId)
+                        .addValue("tagName", tagName))
+                .toArray(SqlParameterSource[]::new);
+
+        String sqlLinkTagsToPost = """
+                INSERT INTO posts_tags (post_id, tag_id)
+                SELECT  :postId, id FROM tags
+                WHERE name = :tagName
+                """;
+
+
+        namedParameterJdbcTemplate.batchUpdate(sqlLinkTagsToPost, batchArgsPostTag);
+    }
+
+    @Override
+    public Post save(Post post) {
+        insertTagsAndLinkUsingBatch(post.getId(), post.getTags());
+
+        String sqlInsertPost = """
+                INSERT INTO posts (title, text)
+                 VALUES(?,?)
+                """;
+
+        return execModifySqlWithFullReturn(post,sqlInsertPost);
+
+    }
     private Post execModifySqlWithFullReturn(Post post, String sqlModify) {
         KeyHolder keyHolder = new GeneratedKeyHolder();
         jdbcTemplate.update(con -> {
@@ -178,51 +208,6 @@ public class JdbcNativePostRepositoryImpl implements PostRepository {
         return map(keyHolder);
     }
 
-    private void insertTagsAndLink(Long postId, List<String> tags) {
-
-        SqlParameterSource[] batchArgs = tags.stream()
-                .map(tagName -> new MapSqlParameterSource("tagName", tagName))
-                .toArray(SqlParameterSource[]::new);
-
-        String sqlInsertTags = """
-                INSERT INTO tags (name)
-                SELECT :tagName
-                WHERE NOT EXISTS (SELECT 1 FROM tags WHERE name = :tagName)
-                """;
-
-        namedParameterJdbcTemplate.batchUpdate(sqlInsertTags, batchArgs);
-
-
-        SqlParameterSource[] batchArgs1 = tags.stream()
-                .map(tagName -> new MapSqlParameterSource()
-                        .addValue("postId", postId)
-                        .addValue("tagName", tagName))
-                .toArray(SqlParameterSource[]::new);
-
-        String sqlLinkTagsToPost = """
-                INSERT INTO posts_tags (post_id, tag_id)
-                SELECT  :postId, id FROM tags
-                WHERE name = :tagName
-                """;
-
-
-        namedParameterJdbcTemplate.batchUpdate(sqlLinkTagsToPost, batchArgs1);
-    }
-
-    @Override
-    public Post save(Post post) {
-        String sqlInsertPost = """
-                INSERT INTO posts (title, text)
-                 VALUES(?,?)
-                """;
-        Post savedPost = execModifySqlWithFullReturn(post, sqlInsertPost);
-
-        insertTagsAndLink(savedPost.getId(), post.getTags());
-
-        savedPost.setTags(post.getTags());
-        return savedPost;
-
-    }
 
     private Post map(KeyHolder keyHolder) {
         return keyHolder.getKeyList().stream().map(m -> {
@@ -238,53 +223,4 @@ public class JdbcNativePostRepositoryImpl implements PostRepository {
 
 
 
-
-//CASE WHEN length (p.content) >128 THEN SUBSTRING(p.conent,1,25) || '...' ELSE p.content todo
-        public Page<Post> findAll(Criteria criteria) {
-            MapSqlParameterSource sqlParameterSource = new MapSqlParameterSource("tags", criteria.tags());
-            sqlParameterSource.addValue("title", criteria.title());
-
-            String sqlCount = new QueryBuilder("SELECT COUNT (DISTINCT p.id) FROM posts p")
-                    .addJoinIf(criteria.hasTags(),
-                            "JOIN posts_tags pt ON p.id = pt.post_id JOIN tags t ON pt.tag_id = t.id")
-                    .addConditionIf(criteria.hasTags(), "t.name IN (:tags)",
-                            () -> sqlParameterSource.addValue("tags", criteria.tags()))
-                    .addConditionIf(criteria.hasTitle(), "p.title LIKE :title",
-                            () -> sqlParameterSource.addValue("title", "%" + criteria.title() + "%"))
-                    .build();
-
-
-            Long countElements = namedParameterJdbcTemplate.queryForObject(sqlCount, sqlParameterSource, Long.class);
-            Integer offset = criteria.pageNumber() * criteria.pageSize();
-
-            sqlParameterSource.addValue("limit", criteria.pageSize());
-            sqlParameterSource.addValue("offset", offset);
-            sqlParameterSource.addValue("title", criteria.title());
-
-            QueryBuilder queryBuilder = new QueryBuilder("""
-                SELECT DISTINCT p.id,p.title," +
-                "CASE WHEN length (p.text) >128 THEN SUBSTRING(p.text,1,128) || '...' ELSE p.text END FROM posts p")
-                """);
-            String sqlSelect = queryBuilder
-                    .addJoinIf(criteria.hasTags(),
-                            "JOIN posts_tags pt ON p.id = pt.post_id JOIN tags t ON pt.tag_id = t.id")
-                    .addConditionIf(criteria.hasTags(), "t.name IN (:tags)",
-                            () -> sqlParameterSource.addValue("tags", criteria.tags()))
-                    .addConditionIf(criteria.hasTitle(), "p.title LIKE :title",
-                            () -> sqlParameterSource.addValue("title", "%" + criteria.title() + "%"))
-                    .append(" ORDER BY p.created_at DESC LIMIT :limit OFFSET :offset")
-                    .build();
-            List<Post> content = namedParameterJdbcTemplate.query(sqlSelect, sqlParameterSource, getRowMapperForPostWithoutTags());
-
-            var page = new PageImpl<>(content,
-                    PageRequest.of(criteria.pageNumber(), criteria.pageSize()), countElements);
-
-
-            return page;
-
-        }
-
-
-
-
-    }
+}
