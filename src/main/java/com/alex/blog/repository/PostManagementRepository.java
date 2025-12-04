@@ -15,5 +15,6 @@ public interface PostManagementRepository {
     void updateImagePath(Long postId, String imagePath);
     Long incrementCommentsCount(Long postId);
     boolean existsById(Long id);
+    String getImagePath(Long postId);
 
 }

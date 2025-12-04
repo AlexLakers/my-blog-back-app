@@ -24,10 +24,19 @@ public class JdbcNativePostManagementRepositoryImpl implements PostManagementRep
     @Override
     public boolean existsById(Long postId) {
 
-        String sqlExists=""" 
+        String sqlExists = """ 
                 SELECT EXISTS (SELECT 1 FROM comments WHERE id = ?)
                 """;
         return Boolean.TRUE.equals(jdbcTemplate.queryForObject(sqlExists, Boolean.class, postId));
+    }
+
+    @Override
+    public String getImagePath(Long postId) {
+        String sqlSelect = """
+                SELECT image_path FROM posts WHERE id = ?
+                """;
+        return jdbcTemplate.queryForObject(sqlSelect, String.class, postId);
+
     }
 
     @Override
@@ -85,16 +94,17 @@ public class JdbcNativePostManagementRepositoryImpl implements PostManagementRep
     @Override
     public Post update(Post post) {
 
-        Long updatedId=updatePostWithoutTags(post);
+        Long updatedId = updatePostWithoutTags(post);
 
         deleteLinkPostsTags(updatedId);
 
-        saveLinkPostsTags(updatedId,post.getTags());
+        saveLinkPostsTags(updatedId, post.getTags());
 
         post.setId(updatedId);
         return post;
 
     }
+
     private Long updatePostWithoutTags(Post post) {
         String sqlUpdatePost = """
                 UPDATE posts SET title=?, text=?
