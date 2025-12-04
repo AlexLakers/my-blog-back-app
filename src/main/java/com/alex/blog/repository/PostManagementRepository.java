@@ -7,14 +7,13 @@ import org.springframework.data.domain.Pageable;
 
 import java.util.Optional;
 
-public interface PostRepository {
-    Optional<Post> findById(Long id);
+public interface PostManagementRepository {
     Post save(Post post);
     void delete(Long id);
     Post update(Post post);
     Long incrementLikesCount(Long postId);
     void updateImagePath(Long postId, String imagePath);
     Long incrementCommentsCount(Long postId);
-    Page<Post> findPostsByCriteriaAndPageable(Criteria criteria, Pageable pageable);
     boolean existsById(Long id);
+
 }
