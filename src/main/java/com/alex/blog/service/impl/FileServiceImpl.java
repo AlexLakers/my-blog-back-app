@@ -4,6 +4,7 @@ import com.alex.blog.service.FileService;
 import lombok.SneakyThrows;
 import org.springframework.beans.factory.annotation.Value;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -31,9 +32,24 @@ public class FileServiceImpl implements FileService {
         return Files.exists(buildPath(folder, fileName));
     }
 
+    @SneakyThrows
     @Override
     public Optional<byte[]> getFile(String folder, String fileName) {
-        return Optional.empty();
+        Path fullPath = buildPath(folder, fileName);
+        return Optional.of(fullPath)
+                .filter(Files::exists)
+                .filter(Files::isRegularFile)
+                .flatMap(this::readAllBytesSafe);
+
+    }
+
+
+    private Optional<byte[]> readAllBytesSafe(Path path) {
+        try {
+            return Optional.of(Files.readAllBytes(path));
+        } catch (IOException e) {
+            return Optional.empty();
+        }
     }
 
     private Path buildPath(String folder, String fileName) {
