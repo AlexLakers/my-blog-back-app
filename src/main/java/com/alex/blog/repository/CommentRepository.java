@@ -9,8 +9,9 @@ import java.util.Optional;
 public interface CommentRepository {
     Optional<Comment> findById(Long id);
     Comment save(Comment comment);
-    boolean delete(Long id);
+    void delete(Long id);
     Comment update(Comment comment);
-    List<Comment> findCommentsByPostId(Long postId);
+    Boolean existsByIdAndPostId(Long id,Long postId);
+    void deleteByPostId(Long postId);
     
 }
