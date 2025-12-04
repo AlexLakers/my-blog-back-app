@@ -24,9 +24,11 @@ public class FileServiceImpl implements FileService {
         Files.copy(content, fullPath, StandardCopyOption.REPLACE_EXISTING);
     }
 
+    @SneakyThrows
     @Override
     public boolean deleteFile(String folder, String fileName) {
-        return false;
+        Files.deleteIfExists(buildPath(folder, fileName));
+        return Files.exists(buildPath(folder, fileName));
     }
 
     @Override
