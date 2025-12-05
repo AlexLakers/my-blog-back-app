@@ -37,6 +37,7 @@ public class PostServiceImpl implements PostService {
     private final PostMapper postMapper;
     private final CommentRepository commentRepository;
     private final FileService fileService;
+    private final Integer MAX_LENGTH_TXT=128;
 
 
     @Override
@@ -58,8 +59,7 @@ public class PostServiceImpl implements PostService {
 
     @Override
     public PostPageDto findPageByCriteria(SearchDto searchDto) {
-        System.out.println(searchDto);
-        Map<Boolean, List<String>> tokens = Arrays.stream(searchDto.searchLine().split(" "))
+        Map<Boolean, List<String>> tokens = Arrays.stream(searchDto.search().split(" "))
                 .filter(Predicate.not(String::isEmpty))
                 .collect(Collectors.partitioningBy(token -> token.startsWith("#")));
 
@@ -71,11 +71,28 @@ public class PostServiceImpl implements PostService {
         String title = tokens.get(Boolean.FALSE).stream()
                 .collect(Collectors.joining(" "));
 
+
+
         Pageable pageable = PageRequest.of(searchDto.pageNumber(), searchDto.pageSize());
-        Page<Post> page = postSearchRepository.findPostsByCriteriaAndPageable(new Criteria(title, tags), pageable);
+        Criteria criteria=new Criteria(title, tags);
+        Page<Post> page = postSearchRepository.findPostsByCriteriaAndPageable(criteria, pageable);
+
+
+        page.stream()
+                .filter(p->p.getText().length()>128)
+                .forEach(post -> {
+
+            String originText=post.getText();
+
+            post.setText(truncateText(originText,MAX_LENGTH_TXT));
+        });
 
 
         return buildPostPageDto(page);
+    }
+    private String truncateText(String text,Integer length) {
+
+        return text.substring(0, length).concat("...");
     }
 
     @Override
