@@ -12,6 +12,7 @@ import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -24,6 +25,25 @@ public class PostRestController {
 
     public final PostService postService;
 
+    @PutMapping(path = "/{postId}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<PostReadDto> update(@PathVariable("postId") Long postId,
+                                              @RequestBody PostUpdateDto postUpdateDto) {
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(postService.updatePost(postId, postUpdateDto));
+    }
+
+    @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<PostPageDto> search(@Validated SearchDto searchDto
+                                                /*@RequestParam("search") String search,
+                                              @RequestParam("pageNumber") int pageNumber,
+                                              @RequestParam("pageSize") int pageSize*/) {
+
+
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(postService.findPageByCriteria(searchDto/*new SearchDto(search, pageNumber, pageSize)*/));
+    }
 
     @PutMapping(value = "/{postId}/image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Void> updateImage(@PathVariable("postId") Long postId,
@@ -43,7 +63,7 @@ public class PostRestController {
                 .body(image);
     }
 
-    @PatchMapping(path = "/{postId}/likes")
+    @PostMapping(path = "/{postId}/likes")
     public ResponseEntity<Long> incrementLikesCount(@PathVariable("postId") Long postId) {
         return ResponseEntity
                 .status(HttpStatus.OK)
