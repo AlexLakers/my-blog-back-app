@@ -25,9 +25,17 @@ public class JdbcNativePostManagementRepositoryImpl implements PostManagementRep
     public boolean existsById(Long postId) {
 
         String sqlExists = """ 
-                SELECT EXISTS (SELECT 1 FROM comments WHERE id = ?)
+                SELECT EXISTS (SELECT 1 FROM posts WHERE id = ?)
                 """;
         return Boolean.TRUE.equals(jdbcTemplate.queryForObject(sqlExists, Boolean.class, postId));
+    }
+
+    @Override
+    public boolean existsByTitle(String title) {
+        String sqlExists = """ 
+                SELECT EXISTS (SELECT 1 FROM posts WHERE title = ?)
+                """;
+        return Boolean.TRUE.equals(jdbcTemplate.queryForObject(sqlExists, Boolean.class, title));
     }
 
     @Override
@@ -96,9 +104,9 @@ public class JdbcNativePostManagementRepositoryImpl implements PostManagementRep
 
         Long updatedId = updatePostWithoutTags(post);
 
-        deleteLinkPostsTags(updatedId);
+        deleteTagsForPost(updatedId);
 
-        saveLinkPostsTags(updatedId, post.getTags());
+        saveTagsForPost(updatedId, post.getTags());
 
         post.setId(updatedId);
         return post;
@@ -123,15 +131,15 @@ public class JdbcNativePostManagementRepositoryImpl implements PostManagementRep
         return (Long) keyHolder.getKeyList().getFirst().get("id");
     }
 
-    private void deleteLinkPostsTags(Long postId) {
+    private void deleteTagsForPost(Long postId) {
         String sqlDelete = """
-                DELETE FROM posts_tags
+                DELETE FROM post_tags
                 WHERE post_id=?
                 """;
         jdbcTemplate.update(sqlDelete, postId);
     }
 
-    private void saveLinkPostsTags(Long postId, List<String> tags) {
+    private void saveTagsForPost(Long postId, List<String> tags) {
         SqlParameterSource[] batchArgsPostTag = tags.stream()
                 .map(tagName -> new MapSqlParameterSource()
                         .addValue("postId", postId)
@@ -139,14 +147,13 @@ public class JdbcNativePostManagementRepositoryImpl implements PostManagementRep
                 .toArray(SqlParameterSource[]::new);
 
         String sqlLinkTagsToPost = """
-                INSERT INTO posts_tags (post_id, tag_id)
-                SELECT  :postId, id FROM tags
-                WHERE name = :tagName
+                INSERT INTO post_tags (post_id, tag)
+                VALUES (:postId, :tagName)
                 """;
         namedParameterJdbcTemplate.batchUpdate(sqlLinkTagsToPost, batchArgsPostTag);
     }
 
-    private void saveTags(List<String> tags) {
+   /* private void saveTags(List<String> tags) {
         SqlParameterSource[] batchArgsTags = tags.stream()
                 .map(tagName -> new MapSqlParameterSource("tagName", tagName))
                 .toArray(SqlParameterSource[]::new);
@@ -158,7 +165,7 @@ public class JdbcNativePostManagementRepositoryImpl implements PostManagementRep
                 """;
 
         namedParameterJdbcTemplate.batchUpdate(sqlInsertTags, batchArgsTags);
-    }
+    }*/
 
     private Long savePostWithoutTags(Post post) {
         String sqlInsertPost = """
@@ -182,9 +189,7 @@ public class JdbcNativePostManagementRepositoryImpl implements PostManagementRep
     public Post save(Post post) {
         Long savedPostId = savePostWithoutTags(post);
 
-        saveTags(post.getTags());
-
-        saveLinkPostsTags(savedPostId, post.getTags());
+        saveTagsForPost(savedPostId, post.getTags());
 
         post.setId(savedPostId);
         return post;
