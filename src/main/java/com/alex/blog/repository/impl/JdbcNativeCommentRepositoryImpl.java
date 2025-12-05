@@ -11,6 +11,7 @@ import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 
 import java.sql.PreparedStatement;
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -77,18 +78,27 @@ public class JdbcNativeCommentRepositoryImpl implements CommentRepository {
 
     @Override
     public Boolean existsByIdAndPostId(Long id, Long postId) {
-        String sqlExists=""" 
+        String sqlExists = """ 
                 SELECT EXISTS (SELECT 1 FROM comments WHERE id = ? AND post_id = ?)
                 """;
-        return Boolean.TRUE.equals(jdbcTemplate.queryForObject(sqlExists, Boolean.class, id,postId));
+        return Boolean.TRUE.equals(jdbcTemplate.queryForObject(sqlExists, Boolean.class, id, postId));
     }
 
     @Override
     public void deleteByPostId(Long postId) {
-        String sqlDelete= """
+        String sqlDelete = """
                 DELETE FROM comments WHERE post_id = ?
                 """;
         jdbcTemplate.update(sqlDelete, postId);
+    }
+
+    @Override
+    public List<Comment> findCommentsByPostId(Long postId) {
+        String sqlSelect = """
+                SELECT id,text,post_id FROM comments WHERE post_id = ?
+                """;
+        return jdbcTemplate.query(sqlSelect, getRowMapper(), postId);
+
     }
 
 
@@ -102,6 +112,7 @@ public class JdbcNativeCommentRepositoryImpl implements CommentRepository {
 
         };
     }
+
     private Comment map(KeyHolder keyHolder) {
         return keyHolder.getKeyList().stream().map(m -> {
             Comment comment = new Comment();
