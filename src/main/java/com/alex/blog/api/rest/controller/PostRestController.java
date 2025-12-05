@@ -25,7 +25,7 @@ public class PostRestController {
     public final PostService postService;
 
 
-    @PutMapping(value = "/{postId}/image",consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PutMapping(value = "/{postId}/image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Void> updateImage(@PathVariable("postId") Long postId,
                                             @RequestParam("image") MultipartFile image) {
         postService.updateImage(postId, image);
@@ -39,15 +39,21 @@ public class PostRestController {
         byte[] image = postService.getImage(postId);
 
         return ResponseEntity.status(HttpStatus.OK)
-                .contentType( MediaType.APPLICATION_OCTET_STREAM)
+                .contentType(MediaType.APPLICATION_OCTET_STREAM)
                 .body(image);
     }
 
     @PatchMapping(path = "/{postId}/likes")
     public ResponseEntity<Long> incrementLikesCount(@PathVariable("postId") Long postId) {
-       return ResponseEntity
+        return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(postService.incrementLikesCount(postId));
+    }
+
+    @DeleteMapping(path = "/{postId}")
+    @ResponseStatus(HttpStatus.OK)
+    public void deletePostWithComments(@PathVariable("postId") Long postId) {
+        postService.deletePost(postId);
     }
 }
 
