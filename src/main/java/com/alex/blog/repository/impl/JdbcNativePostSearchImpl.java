@@ -10,6 +10,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.ResultSetExtractor;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
@@ -32,33 +33,33 @@ public class JdbcNativePostSearchImpl implements PostSearchRepository {
         String sqlWhere = buildWhere(criteria, params, pageable);
 
         StringBuilder sqlCount = new StringBuilder("""
-                SELECT COUNT (DISTINCT p.id) FROM posts p
-                JOIN posts_tags pt ON p.id = pt.post_id
-                JOIN tags t ON pt.tag_id = t.id
+                SELECT COUNT (DISTINCT p.id) FROM posts AS p
+                JOIN post_tags AS pt ON p.id = pt.post_id
                 """)
                 .append(sqlWhere);
 
         Long countElements = namedParameterJdbcTemplate.queryForObject(sqlCount.toString(), params, Long.class);
 
         StringBuilder sqlSelect = new StringBuilder("""
-                SELECT p.id,p.title,p.text,p.likes_count,p.comments_count FROM posts AS p
-                JOIN posts_tags AS pt ON p.id = pt.post_id
-                JOIN tags t ON pt.tag_id = t.id
+                SELECT DISTINCT p.id,p.title,p.text,p.likes_count,p.comments_count FROM posts AS p
+                JOIN post_tags AS pt ON p.id = pt.post_id
                 """)
                 .append(sqlWhere)
-                .append("ORDER BY p.id LIMIT :limit OFFSET :offset");
+                .append(" ORDER BY p.id LIMIT :limit OFFSET :offset");
 
         List<Post> postsWithoutTags = namedParameterJdbcTemplate.query(sqlSelect.toString(), params, getRowMapperPost());
+
         List<Post> posts = fetchTags(postsWithoutTags);
 
         return new PageImpl<>(posts, PageRequest.of(pageable.getPageNumber(), pageable.getPageSize()), countElements);
     }
 
+
     private List<Post> fetchTags(List<Post> posts) {
         List<Long> postsIds = posts.stream()
                 .map(Post::getId).toList();
 
-        Map<Long, List<String>> tagsForPosts = getTagsForPostsByPostIds(postsIds);
+        Map<Long, List<String>> tagsForPosts = findTagsByPostsIds(postsIds);
 
         posts.forEach(post -> {
                     post.setTags(tagsForPosts.getOrDefault(post.getId(), List.of()));
@@ -68,15 +69,14 @@ public class JdbcNativePostSearchImpl implements PostSearchRepository {
     }
 
     private String buildWhere(Criteria criteria, MapSqlParameterSource params, Pageable pageable) {
-
         List<String> conditions = new ArrayList<>();
         if (criteria.title() != null && !criteria.title().isEmpty()) {
-            params.addValue("title", "%" +criteria.title()+ "%");
-            conditions.add(" p.title LIKE :title ");
+            params.addValue("title", "%"+criteria.title()+"%");
+            conditions.add(" p.title LIKE :title");
         }
         if (criteria.tags() != null && !criteria.tags().isEmpty()) {
             params.addValue("tags", criteria.tags());
-            conditions.add(" t.name IN(:tags) ");
+            conditions.add(" pt.tag IN(:tags)");
         }
         params.addValue("limit", pageable.getPageSize());
         params.addValue("offset", pageable.getPageNumber() * pageable.getOffset());
@@ -85,37 +85,20 @@ public class JdbcNativePostSearchImpl implements PostSearchRepository {
     }
 
 
-    private Map<Long, List<String>> getTagsForPostsByPostIds(List<Long> postsIds) {
-        SqlParameterSource params = new MapSqlParameterSource("postsIds", postsIds);
-        Map<Long, List<String>> tags = new HashMap<>();
-        String sqlSelect = """
-                SELECT pt.post_id, t.name
-                FROM posts_tags AS pt
-                JOIN tags AS t ON pt.tag_id = t.id
-                WHERE pt.post_id IN (:postsIds)
-                """;
-        namedParameterJdbcTemplate.query(sqlSelect, params,
-                (rs, rc) -> {
-                    Long postId = rs.getLong("post_id");
-                    String tag = rs.getString("name");
-                    tags.computeIfAbsent(postId, k -> new ArrayList<>()).add(tag);
-                    return tags;
-                });
-        return tags;
-    }
-
     @Override
     public Optional<Post> findPostById(Long id) {
-        String sql = """
-                SELECT p.id, p.title, p.text, p.image_path, p.likes_count, p.comments_count
+
+        String sqlSelect = """
+                SELECT p.id,p.title,p.text,p.likes_count,p.comments_count
                 FROM posts AS p
                 WHERE p.id = ?
                 """;
         try {
-            Optional<Post> maybePost = Optional.ofNullable(jdbcTemplate.queryForObject(sql, getRowMapperPost(), id));
+            Optional<Post> maybePost = Optional.ofNullable(jdbcTemplate.queryForObject(sqlSelect, getRowMapperPost(), id));
 
             maybePost.ifPresent(post -> {
-                post.setTags(findTagsByPostId(post.getId()));
+                Map<Long,List<String>> tags=findTagsByPostsIds(List.of(post.getId()));
+                post.setTags(tags.get(post.getId()));
             });
             return maybePost;
 
@@ -123,13 +106,26 @@ public class JdbcNativePostSearchImpl implements PostSearchRepository {
             return Optional.empty();
         }
     }
-    private List<String> findTagsByPostId(Long postId) {
-        String sql = """
-                SELECT t.name FROM tags AS t
-                JOIN posts_tags AS pt ON pt.tag_id = t.id
-                WHERE pt.post_id = ?
+
+    private Map<Long,List<String>> findTagsByPostsIds(List<Long> postsIds) {
+        System.out.println(postsIds+"dsad");
+        SqlParameterSource params = new MapSqlParameterSource("postsIds", postsIds);
+        Map<Long, List<String>> tags = new HashMap<>();
+        System.out.println(postsIds);
+        String sqlSelect = """
+                SELECT post_id, tag
+                FROM post_tags
+                WHERE post_id IN (:postsIds)
                 """;
-        return jdbcTemplate.query(sql, (rs, rc) -> rs.getString("name"), postId);
+        namedParameterJdbcTemplate.query(sqlSelect, params,
+                (rs, rc) -> {
+                    Long postId = rs.getLong("post_id");
+                    String tag = rs.getString("tag");
+                    tags.computeIfAbsent(postId, k -> new ArrayList<>()).add(tag);
+                    return tags;
+                });
+        return tags;
+
     }
 
     private RowMapper<Post> getRowMapperPost() {
