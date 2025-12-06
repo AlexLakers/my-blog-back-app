@@ -5,6 +5,7 @@ import com.alex.blog.api.dto.PostReadDto;
 import com.alex.blog.api.dto.PostUpdateDto;
 import com.alex.blog.exception.EntityCreationException;
 import com.alex.blog.exception.EntityNotFoundException;
+import com.alex.blog.exception.TitleAlreadyExistsException;
 import com.alex.blog.mapper.PostMapper;
 import com.alex.blog.model.Post;
 import com.alex.blog.repository.CommentRepository;
@@ -37,7 +38,7 @@ public class PostServiceImpl implements PostService {
     private final PostMapper postMapper;
     private final CommentRepository commentRepository;
     private final FileService fileService;
-    private final Integer MAX_LENGTH_TXT=128;
+    private final Integer MAX_LENGTH_TXT = 128;
 
 
     @Override
@@ -72,26 +73,23 @@ public class PostServiceImpl implements PostService {
                 .collect(Collectors.joining(" "));
 
 
-
-        Pageable pageable = PageRequest.of(searchDto.pageNumber(), searchDto.pageSize());
-        Criteria criteria=new Criteria(title, tags);
+        Pageable pageable = PageRequest.of(searchDto.pageNumber()-1, searchDto.pageSize());
+        Criteria criteria = new Criteria(title, tags);
         Page<Post> page = postSearchRepository.findPostsByCriteriaAndPageable(criteria, pageable);
 
 
         page.stream()
-                .filter(p->p.getText().length()>128)
+                .filter(p -> p.getText().length() > 128)
                 .forEach(post -> {
-
-            String originText=post.getText();
-
-            post.setText(truncateText(originText,MAX_LENGTH_TXT));
-        });
+                    String originText = post.getText();
+                    post.setText(truncateText(originText, MAX_LENGTH_TXT));
+                });
 
 
         return buildPostPageDto(page);
     }
-    private String truncateText(String text,Integer length) {
 
+    private String truncateText(String text, Integer length) {
         return text.substring(0, length).concat("...");
     }
 
@@ -121,22 +119,25 @@ public class PostServiceImpl implements PostService {
 
     @Override
     public byte[] getImage(Long postId) {
-        String imagePath=postManagementRepository.getImagePath(postId);
-        System.out.println(imagePath);
-        return fileService.getFile(imagePath).get();
+        String imagePath = postManagementRepository.getImagePath(postId);
+        return fileService.getFile(imagePath).orElseThrow();
     }
 
     @SneakyThrows
     @Override
     public void updateImage(long postId, MultipartFile file) {
-        InputStream is=file.getInputStream();
-        String imageName= postId+"/"+(Objects.requireNonNull(file.getOriginalFilename()));
+        InputStream is = file.getInputStream();
+        String imageName = postId + "/" + UUID.randomUUID()+(Objects.requireNonNull(file.getOriginalFilename()));
 
         postManagementRepository.updateImagePath(postId, imageName);
-        fileService.saveFile(is,imageName);
+        fileService.saveFile(is, imageName);
     }
 
     public PostReadDto savePost(PostCreateDto postCreateDto) {
+        if (postManagementRepository.existsByTitle(postCreateDto.title())) {
+            throw new TitleAlreadyExistsException("The title: %s already exists".formatted(postCreateDto.title()));
+        }
+
         return Optional.ofNullable(postCreateDto)
                 .map(postMapper::toPost)
                 .map(postManagementRepository::save)
