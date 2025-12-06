@@ -10,31 +10,22 @@ CREATE TABLE IF NOT EXISTS posts
 
     CONSTRAINT pk_posts PRIMARY KEY (id),
     CONSTRAINT chk_posts_likes_count CHECK (likes_count >= 0),
-    CONSTRAINT chk_posts_comments_count CHECK (comments_count >= 0)
-);
-
-CREATE TABLE IF NOT EXISTS tags
-(
-    id         BIGINT GENERATED ALWAYS AS IDENTITY NOT NULL,
-    name       VARCHAR(256)                        NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-
-    CONSTRAINT pk_tags PRIMARY KEY (id),
-    CONSTRAINT uk_tags_name UNIQUE (name)
+    CONSTRAINT chk_posts_comments_count CHECK (comments_count >= 0),
+    CONSTRAINT uk_tags_name UNIQUE (title)
 );
 
 
-CREATE TABLE IF NOT EXISTS posts_tags
+CREATE TABLE IF NOT EXISTS post_tags
 (
     post_id BIGINT NOT NULL,
-    tag_id  BIGINT NOT NULL,
+    tag  VARCHAR(256) NOT NULL,
 
     CONSTRAINT fk_posts_tags_posts FOREIGN KEY (post_id) REFERENCES posts (id) ON DELETE CASCADE,
-    CONSTRAINT fk_posts_tags_tags FOREIGN KEY (tag_id) REFERENCES tags (id) ON DELETE CASCADE,
-    CONSTRAINT pk_posts_tags PRIMARY KEY (post_id, tag_id)
-
-
+    CONSTRAINT pk_posts_tags PRIMARY KEY (post_id, tag)
 );
+
+
+
 
 
 CREATE TABLE IF NOT EXISTS comments

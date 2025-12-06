@@ -1,7 +1,6 @@
 package com.alex.blog.repository.impl;
 
 import com.alex.blog.model.Comment;
-import com.alex.blog.model.Post;
 import com.alex.blog.repository.CommentRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.EmptyResultDataAccessException;
@@ -17,10 +16,9 @@ import java.util.Optional;
 
 @Repository
 @RequiredArgsConstructor
-public class JdbcCommentRepository implements CommentRepository {
+public class JdbcNativeCommentRepositoryImpl implements CommentRepository {
 
     private final JdbcTemplate jdbcTemplate;
-
 
     @Override
     public Comment save(Comment comment) {
@@ -39,17 +37,17 @@ public class JdbcCommentRepository implements CommentRepository {
     }
 
     @Override
-    public boolean delete(Long id) {
-        String sql= """
+    public void delete(Long id) {
+        String sqlDelete = """
                     DELETE FROM comments WHERE id = ?
                 """;
-        return jdbcTemplate.update(sql, id)>0;
+        jdbcTemplate.update(sqlDelete, id);
     }
 
     @Override
     public Comment update(Comment comment) {
         String sqlUpdate = """
-                UPDATE posts SET text=?, post_id=?
+                UPDATE comments SET text=?, post_id=?
                 WHERE id=?
                 """;
         KeyHolder keyHolder = new GeneratedKeyHolder();
@@ -62,16 +60,6 @@ public class JdbcCommentRepository implements CommentRepository {
         }, keyHolder);
 
         return map(keyHolder);
-    }
-
-    private Comment map(KeyHolder keyHolder) {
-        return keyHolder.getKeyList().stream().map(m -> {
-            Comment comment = new Comment();
-            comment.setId((Long) m.get(Comment.Fields.id));
-            comment.setText((String) m.get(Post.Fields.title));
-            comment.setPostId((Long) m.get("post_id"));
-            return comment;
-        }).findFirst().orElseThrow();
     }
 
 
@@ -88,11 +76,20 @@ public class JdbcCommentRepository implements CommentRepository {
     }
 
     @Override
-    public List<Comment> findCommentsByPostId(Long postId) {
-        String sql = """
-                SELECT * FROM comments WHERE post_id = ?
+    public void deleteByPostId(Long postId) {
+        String sqlDelete = """
+                DELETE FROM comments WHERE post_id = ?
                 """;
-        return jdbcTemplate.query(sql, getRowMapper(), postId);
+        jdbcTemplate.update(sqlDelete, postId);
+    }
+
+    @Override
+    public List<Comment> findCommentsByPostId(Long postId) {
+        String sqlSelect = """
+                SELECT id,text,post_id FROM comments WHERE post_id = ?
+                """;
+        return jdbcTemplate.query(sqlSelect, getRowMapper(), postId);
+
     }
 
 
@@ -105,5 +102,15 @@ public class JdbcCommentRepository implements CommentRepository {
             return comment;
 
         };
+    }
+
+    private Comment map(KeyHolder keyHolder) {
+        return keyHolder.getKeyList().stream().map(m -> {
+            Comment comment = new Comment();
+            comment.setId((Long) m.get(Comment.Fields.id));
+            comment.setText((String) m.get(Comment.Fields.text));
+            comment.setPostId((Long) m.get("post_id"));
+            return comment;
+        }).findFirst().orElseThrow();
     }
 }

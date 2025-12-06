@@ -11,6 +11,7 @@ import java.util.List;
 @Getter
 @Setter
 @FieldNameConstants
+@ToString
 public class Post {
     private Long id;
     private String title;
