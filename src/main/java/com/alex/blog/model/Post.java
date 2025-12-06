@@ -12,6 +12,7 @@ import java.util.List;
 @Setter
 @FieldNameConstants
 @ToString
+@EqualsAndHashCode
 public class Post {
     private Long id;
     private String title;
