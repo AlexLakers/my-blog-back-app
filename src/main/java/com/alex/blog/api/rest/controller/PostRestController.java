@@ -25,6 +25,20 @@ public class PostRestController {
 
     public final PostService postService;
 
+    @GetMapping(path = "/{postId}", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<PostReadDto> findById(@PathVariable("postId") Long postId) {
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(postService.findOnePost(postId));
+    }
+
+    @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<PostReadDto> create(@RequestBody PostCreateDto postCreateDto) {
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(postService.savePost(postCreateDto));
+    }
+
     @PutMapping(path = "/{postId}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<PostReadDto> update(@PathVariable("postId") Long postId,
                                               @RequestBody PostUpdateDto postUpdateDto) {
