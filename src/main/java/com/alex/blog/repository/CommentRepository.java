@@ -11,7 +11,6 @@ public interface CommentRepository {
     Comment save(Comment comment);
     void delete(Long id);
     Comment update(Comment comment);
-    Boolean existsByIdAndPostId(Long id,Long postId);
     void deleteByPostId(Long postId);
     List<Comment> findCommentsByPostId(Long postId);
     
