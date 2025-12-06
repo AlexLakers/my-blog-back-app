@@ -82,16 +82,17 @@ public class JdbcNativePostManagementRepositoryImpl implements PostManagementRep
     }
 
     @Override
-    public Long incrementCommentsCount(Long postId) {
+    public Long incrementCommentsCount(Long postId,Long incValue) {
         String sql = """
                     UPDATE posts
-                    SET  comments_count=comments_count+1
+                    SET  comments_count=comments_count+?
                     WHERE id=?
                 """;
         KeyHolder keyHolder = new GeneratedKeyHolder();
         jdbcTemplate.update(conn -> {
             var ps = conn.prepareStatement(sql, new String[]{"comments_count"});
-            ps.setLong(1, postId);
+            ps.setLong(1, incValue);
+            ps.setLong(2, postId);
             return ps;
         }, keyHolder);
 
