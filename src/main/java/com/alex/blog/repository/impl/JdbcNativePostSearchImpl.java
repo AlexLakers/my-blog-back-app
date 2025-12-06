@@ -71,7 +71,7 @@ public class JdbcNativePostSearchImpl implements PostSearchRepository {
     private String buildWhere(Criteria criteria, MapSqlParameterSource params, Pageable pageable) {
         List<String> conditions = new ArrayList<>();
         if (criteria.title() != null && !criteria.title().isEmpty()) {
-            params.addValue("title", "%"+criteria.title()+"%");
+            params.addValue("title", "%" + criteria.title() + "%");
             conditions.add(" p.title LIKE :title");
         }
         if (criteria.tags() != null && !criteria.tags().isEmpty()) {
@@ -97,7 +97,7 @@ public class JdbcNativePostSearchImpl implements PostSearchRepository {
             Optional<Post> maybePost = Optional.ofNullable(jdbcTemplate.queryForObject(sqlSelect, getRowMapperPost(), id));
 
             maybePost.ifPresent(post -> {
-                Map<Long,List<String>> tags=findTagsByPostsIds(List.of(post.getId()));
+                Map<Long, List<String>> tags = findTagsByPostsIds(List.of(post.getId()));
                 post.setTags(tags.get(post.getId()));
             });
             return maybePost;
@@ -107,8 +107,7 @@ public class JdbcNativePostSearchImpl implements PostSearchRepository {
         }
     }
 
-    private Map<Long,List<String>> findTagsByPostsIds(List<Long> postsIds) {
-        System.out.println(postsIds+"dsad");
+    private Map<Long, List<String>> findTagsByPostsIds(List<Long> postsIds) {
         SqlParameterSource params = new MapSqlParameterSource("postsIds", postsIds);
         Map<Long, List<String>> tags = new HashMap<>();
         System.out.println(postsIds);

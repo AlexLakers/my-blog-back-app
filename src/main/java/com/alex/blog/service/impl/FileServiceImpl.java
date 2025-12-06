@@ -29,7 +29,6 @@ public class FileServiceImpl implements FileService {
     }
 
 
-
     @SneakyThrows
     @Override
     public Optional<byte[]> getFile(String fileName) {
