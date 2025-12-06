@@ -12,12 +12,14 @@ import com.alex.blog.repository.PostManagementRepository;
 import com.alex.blog.service.CommentService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class CommentServiceImpl implements CommentService {
     private final CommentRepository commentRepository;
     private final CommentMapper commentMapper;
@@ -33,6 +35,7 @@ public class CommentServiceImpl implements CommentService {
                         .formatted(commentId)));
     }
 
+    @Transactional
     @Override
     public CommentReadDto saveComment(Long postId, CommentCreateDto commentCreateDto) {
 
@@ -50,7 +53,7 @@ public class CommentServiceImpl implements CommentService {
 
         return commentReadDto;
     }
-
+    @Transactional
     @Override
     public CommentReadDto updateComment(Long postId, Long commentId, CommentUpdateDto commentUpdateDto) {
         if (!postManagementRepository.existsById(postId)) {
@@ -73,7 +76,7 @@ public class CommentServiceImpl implements CommentService {
         return commentMapper.toCommentReadDto(updatedComment);
 
     }
-
+    @Transactional
     @Override
     public void deleteComment(Long postId, Long commentId) {
         if (!postManagementRepository.existsById(postId)) {

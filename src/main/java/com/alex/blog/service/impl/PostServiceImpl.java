@@ -22,6 +22,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.InputStream;
@@ -31,6 +32,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class PostServiceImpl implements PostService {
 
     private final PostManagementRepository postManagementRepository;
@@ -93,6 +95,7 @@ public class PostServiceImpl implements PostService {
         return text.substring(0, length).concat("...");
     }
 
+    @Transactional
     @Override
     public PostReadDto updatePost(Long postId, PostUpdateDto postUpdateDto) {
 
@@ -106,7 +109,7 @@ public class PostServiceImpl implements PostService {
                 .orElseThrow(() -> new EntityNotFoundException("The post with id:%1$d not found"
                         .formatted(postId)));
     }
-
+@Transactional
     public void deletePost(Long postId) {
         if (!postManagementRepository.existsById(postId)) {
             throw new EntityNotFoundException("The post with id:%1$d not found"
@@ -133,6 +136,8 @@ public class PostServiceImpl implements PostService {
         fileService.saveFile(is, imageName);
     }
 
+    @Transactional
+    @Override
     public PostReadDto savePost(PostCreateDto postCreateDto) {
         if (postManagementRepository.existsByTitle(postCreateDto.title())) {
             throw new TitleAlreadyExistsException("The title: %s already exists".formatted(postCreateDto.title()));

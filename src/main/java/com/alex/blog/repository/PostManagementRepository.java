@@ -1,11 +1,6 @@
 package com.alex.blog.repository;
 
 import com.alex.blog.model.Post;
-import com.alex.blog.search.Criteria;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-
-import java.util.Optional;
 
 public interface PostManagementRepository {
     Post save(Post post);
@@ -13,7 +8,7 @@ public interface PostManagementRepository {
     Post update(Post post);
     Long incrementLikesCount(Long postId);
     void updateImagePath(Long postId, String imagePath);
-    Long incrementCommentsCount(Long postId);
+    Long incrementCommentsCount(Long postId,Long incValue);
     boolean existsById(Long id);
     boolean existsByTitle(String title);
     String getImagePath(Long postId);
