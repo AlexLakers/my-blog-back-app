@@ -83,6 +83,13 @@ public class JdbcNativeCommentRepositoryImpl implements CommentRepository {
                 """;
         return Boolean.TRUE.equals(jdbcTemplate.queryForObject(sqlExists, Boolean.class, id, postId));
     }
+    @Override
+    public Boolean existsByPostId( Long postId) {
+        String sqlExists = """ 
+                SELECT EXISTS (SELECT 1 FROM comments WHERE post_id = ?)
+                """;
+        return Boolean.TRUE.equals(jdbcTemplate.queryForObject(sqlExists, Boolean.class,  postId));
+    }
 
     @Override
     public void deleteByPostId(Long postId) {
