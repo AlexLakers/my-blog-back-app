@@ -40,7 +40,7 @@ public class GlobalRestControllerAdvice {
 
     @ExceptionHandler(ImageNotFoundException.class)
     public ResponseEntity<String> handleImageNotFoundException(ImageNotFoundException ex) {
-        return status(HttpStatus.BAD_REQUEST)
+        return status(HttpStatus.NOT_FOUND)
                 .body(ex.getMessage());
     }
 
