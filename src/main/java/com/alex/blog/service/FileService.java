@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.util.Optional;
 
 public interface FileService {
-    void saveFile( InputStream inputStream,  String fileName);
+    void saveFile( MultipartFile file,/*InputStream inputStream,*/  String fileName);
     Optional<byte[]> getFile(String fileName);
+    void deleteFile(String fileName);
 }
