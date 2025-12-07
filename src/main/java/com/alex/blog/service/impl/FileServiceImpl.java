@@ -43,6 +43,16 @@ public class FileServiceImpl implements FileService {
 
         return buildAndCheckPath(fileName)
                 .flatMap(this::readAllBytesSafe);
+    }
+
+    @SneakyThrows
+    @Override
+    public void deleteFile(String fileName) {
+
+        Optional<Path> maybePath = buildAndCheckPath(fileName);
+        if (buildAndCheckPath(fileName).isPresent()) {
+            Files.deleteIfExists(maybePath.get());
+        }
 
     }
 
