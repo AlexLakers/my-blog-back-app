@@ -7,10 +7,13 @@ import com.alex.blog.search.PostPageDto;
 import com.alex.blog.search.SearchDto;
 import com.alex.blog.service.CommentService;
 import com.alex.blog.service.PostService;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import config.ObjectMapperConfig;
 import config.TestDataSourceConfig;
 import config.TestWebConfig;
 import lombok.SneakyThrows;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -23,8 +26,10 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.context.web.WebAppConfiguration;
@@ -33,26 +38,28 @@ import org.springframework.test.web.servlet.assertj.MockMvcTester;
 import org.springframework.test.web.servlet.request.MockMultipartHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.filter.CharacterEncodingFilter;
 //org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.stream.Stream;
 
 import static org.hamcrest.Matchers.*;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 
 @ExtendWith(SpringExtension.class)
-@ContextConfiguration(classes = {WebConfiguration.class, TestDataSourceConfig.class})
+@ContextConfiguration(classes = {WebConfiguration.class, TestDataSourceConfig.class, ObjectMapperConfig.class})
 
 @WebAppConfiguration
+@TestPropertySource(locations = "classpath:application-test.properties")
 class PostRestControllerTest {
 
     @Autowired
@@ -61,51 +68,34 @@ class PostRestControllerTest {
     @Autowired
     private PostService postService;
 
-  //  @Autowired
-  //  private ObjectMapper objectMapper;
+    private static final Long VALID_ID = 1L;
+    private static final Long INVALID_ID = 10000L;
+
+    @Autowired
+    private ObjectMapper objectMapper;
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
 
     private MockMvc mockMvc;
 
-   /* @BeforeEach
+
+    @BeforeEach
     void setUp() {
+
         mockMvc = MockMvcBuilders
                 .webAppContextSetup(webApplicationContext)
+                .addFilter(new CharacterEncodingFilter("UTF-8", true))
+                .alwaysDo(print())
                 .build();
-    }*/
-    @BeforeEach
-   void setUp() {
-       // Настраиваем MockMvc с поддержкой multipart
-       mockMvc = MockMvcBuilders
-               .webAppContextSetup(webApplicationContext)
-               .addFilter(new CharacterEncodingFilter("UTF-8", true))
-               .alwaysDo(print())
-               .build();
-   }
-
-
-
-
-
-    @Test
-    void findById() {
-
     }
 
-    @Test
-    void create() {
-    }
-
-    @Test
-    void update() {
-    }
 
 
 
     @SneakyThrows
-     @ParameterizedTest
+    @ParameterizedTest
     @MethodSource("getArgsForSearch")
-    void givenTagsOrAndTitle_search_shouldReturnJSONArray(String paramSearch,String pageSize, int sizeArray,String hasPrev, String hasNext, String lastPage) {
-        // SearchDto searchDto = new SearchDto("test title1 , 1, 3);
+    void givenTagsOrAndTitle_search_shouldReturnJSONArray(String paramSearch, String pageSize, int sizeArray, String hasPrev, String hasNext, String lastPage) {
         PostReadDto postReadDto = new PostReadDto(1L, "test title1", "test desc1", List.of("test_tag1"), 2L, 3L);
 
         // Mockito.when(postService.findPageByCriteria(searchDto)).thenReturn(new PostPageDto(List.of(postReadDto),false,true,1));
@@ -115,7 +105,7 @@ class PostRestControllerTest {
                         .param("pageSize", pageSize)
                 )
                 .andExpect(status().isOk())
-                .andExpect((content().contentType(MediaType.APPLICATION_JSON)))
+                .andExpect(content().contentType(MediaType.valueOf("application/json;charset=UTF-8")))
                 .andExpect(jsonPath("$.posts", hasSize(sizeArray)))
                 .andExpect(jsonPath("$.posts[0].title").value("test title1"))
                 .andExpect(jsonPath("$.posts[0].id").value("1"))
@@ -126,55 +116,81 @@ class PostRestControllerTest {
                 .andExpect(jsonPath("$.lastPage").value(lastPage));
     }
 
-    public static Stream<Arguments> getArgsForSearch(){
+    public static Stream<Arguments> getArgsForSearch() {
 
         return Stream.of(
-                Arguments.of("#test_tag1","3",2,"false","false","0"),
-                Arguments.of("test t #test_tag1","3",2,"false","false","0"),
-                Arguments.of("test t","3",3,"false","false","0"),
-                Arguments.of("test t","2",2,"false","true","1")
+                Arguments.of("#test_tag1", "3", 2, "false", "false", "0"),
+                Arguments.of("test t #test_tag1", "3", 2, "false", "false", "0"),
+                Arguments.of("test t", "3", 3, "false", "false", "0"),
+                Arguments.of("test t", "2", 2, "false", "true", "1")
 
         );
     }
 
 
     @Test
-    void updateImage() throws Exception {
 
+    void updateImage_ShouldImageNotFound404() throws Exception {
+        mockMvc.perform(get("/api/posts/{id}/image", VALID_ID))
+                .andExpect(status().isNotFound())
+                .andExpect(content().string("The image path or image not found for post with id:%d".formatted(VALID_ID)));
+    }
+
+    @Test
+
+    void updateImage_ShouldPostNotFound404() throws Exception {
+
+
+        mockMvc.perform(get("/api/posts/{id}/image", INVALID_ID))
+                .andExpect(status().isNotFound())
+                .andExpect(content().string("The post with id:%1$d not found".formatted(INVALID_ID)));
     }
 
 
-
     @Test
-    void getImage() throws Exception {
+    @Transactional
+    void uploadAndDownloadSuccess_shouldSaveAndReturnArrayBytes() throws Exception {
         byte[] givenImage = new byte[]{(byte) 137, 80, 78, 71};
         MockMultipartFile file = new MockMultipartFile("image", "image.jpg", "image/jpg", givenImage);
 
-        // Создаем специальный builder для PUT multipart
-    /*    MockMultipartHttpServletRequestBuilder builder =
-                MockMvcRequestBuilders.multipart("/api/posts/{postId}/image", 1);
-        builder.with(request -> {
-            request.setMethod("PUT");
-            return request;
-        });*/
-
-        mockMvc.perform(multipart(HttpMethod.PUT,"/api/posts/{id}/image",1)
+        mockMvc.perform(multipart(HttpMethod.PUT, "/api/posts/{id}/image", 1)
                         .file(file)
                         .contentType(MediaType.MULTIPART_FORM_DATA))
                 .andExpect(status().isOk());
 
         mockMvc.perform(get("/api/posts/{id}/image", 1L))
                 .andExpect(status().isOk())
-               // .andExpect(content().contentType(MediaType.IMAGE_JPEG_VALUE))
+                .andExpect(content().contentType(MediaType.valueOf("image/jpeg;charset=UTF-8")))
                 .andExpect(header().string("Cache-Control", "no-store"))
                 .andExpect(content().bytes(givenImage));
     }
 
     @Test
-    void incrementLikesCount() {
+    @Transactional
+    void incrementLikesCount_shouldReturnStringLikesCount() throws Exception {
+        mockMvc.perform(post("/api/posts/{id}/likes", VALID_ID))
+                .andExpect(status().isOk())
+                .andExpect(content().string("3"));
     }
 
     @Test
-    void deletePostWithComments() {
+    @Transactional
+    void deletePostWithComments_shouldDeletePostsRWithCommentsSuccess() throws Exception {
+        mockMvc.perform(delete("/api/posts/{postId}", VALID_ID))
+                .andExpect(status().isOk());
+
+        Boolean existsPosts=jdbcTemplate.queryForObject("SELECT EXISTS (SELECT 1 FROM posts WHERE id = ?)", Boolean.class, VALID_ID);
+        Boolean existsComments=jdbcTemplate.queryForObject("SELECT EXISTS (SELECT 1 FROM comments WHERE post_id = ?)", Boolean.class, VALID_ID);
+
+        Assertions.assertThat(existsPosts).isFalse();
+        Assertions.assertThat(existsComments).isFalse();
     }
+
+    @Test
+    void deletePostWithComments_shouldPostNotFound404Fail() throws Exception {
+        mockMvc.perform(delete("/api/posts/{postId}", INVALID_ID))
+                .andExpect(status().isNotFound())
+                .andExpect(content().string("The post not found by id:%d".formatted(INVALID_ID)));
+    }
+
 }
