@@ -34,7 +34,7 @@ public class JdbcNativePostSearchImpl implements PostSearchRepository {
 
         StringBuilder sqlCount = new StringBuilder("""
                 SELECT COUNT (DISTINCT p.id) FROM posts AS p
-                JOIN post_tags AS pt ON p.id = pt.post_id
+                LEFT JOIN post_tags AS pt ON p.id = pt.post_id
                 """)
                 .append(sqlWhere);
 
@@ -42,15 +42,18 @@ public class JdbcNativePostSearchImpl implements PostSearchRepository {
 
         StringBuilder sqlSelect = new StringBuilder("""
                 SELECT DISTINCT p.id,p.title,p.text,p.likes_count,p.comments_count FROM posts AS p
-                JOIN post_tags AS pt ON p.id = pt.post_id
+                LEFT JOIN post_tags AS pt ON p.id = pt.post_id
                 """)
                 .append(sqlWhere)
                 .append(" ORDER BY p.id LIMIT :limit OFFSET :offset");
 
+        System.out.println(sqlSelect);
+
         List<Post> postsWithoutTags = namedParameterJdbcTemplate.query(sqlSelect.toString(), params, getRowMapperPost());
+        System.out.println(postsWithoutTags);
 
         List<Post> posts = fetchTags(postsWithoutTags);
-
+       // System.out.println(posts);
         return new PageImpl<>(posts, PageRequest.of(pageable.getPageNumber(), pageable.getPageSize()), countElements);
     }
 
@@ -62,7 +65,7 @@ public class JdbcNativePostSearchImpl implements PostSearchRepository {
         Map<Long, List<String>> tagsForPosts = findTagsByPostsIds(postsIds);
 
         posts.forEach(post -> {
-                    post.setTags(tagsForPosts.getOrDefault(post.getId(), List.of()));
+                    post.setTags(tagsForPosts.getOrDefault(post.getId(), new ArrayList<>()));
                 }
         );
         return posts;
@@ -76,12 +79,26 @@ public class JdbcNativePostSearchImpl implements PostSearchRepository {
         }
         if (criteria.tags() != null && !criteria.tags().isEmpty()) {
             params.addValue("tags", criteria.tags());
-            conditions.add(" pt.tag IN(:tags)");
+            params.addValue("tagsCount", criteria.tags().size());
+            conditions.add("""
+            p.id IN (
+                SELECT pt.post_id
+                FROM post_tags pt
+                WHERE pt.tag IN (:tags)
+                GROUP BY pt.post_id
+                HAVING COUNT(DISTINCT pt.tag) = :tagsCount
+            )
+        """);
+
         }
         params.addValue("limit", pageable.getPageSize());
         params.addValue("offset", pageable.getPageNumber() * pageable.getOffset());
 
-        return conditions.stream().collect(Collectors.joining(" AND ", " WHERE ", ""));
+
+        String where = conditions.isEmpty() ? "" :
+                conditions.stream().collect(Collectors.joining(" AND ", " WHERE ", ""));
+
+        return where;
     }
 
 
@@ -98,7 +115,7 @@ public class JdbcNativePostSearchImpl implements PostSearchRepository {
 
             maybePost.ifPresent(post -> {
                 Map<Long, List<String>> tags = findTagsByPostsIds(List.of(post.getId()));
-                post.setTags(tags.get(post.getId()));
+                post.setTags(tags.getOrDefault(post.getId(), new ArrayList<>()));
             });
             return maybePost;
 
