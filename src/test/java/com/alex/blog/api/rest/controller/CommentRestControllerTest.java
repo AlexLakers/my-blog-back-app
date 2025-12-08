@@ -1,6 +1,9 @@
 package com.alex.blog.api.rest.controller;
 
 import com.alex.blog.WebConfiguration;
+import com.alex.blog.api.dto.CommentCreateDto;
+import com.alex.blog.api.dto.CommentReadDto;
+import com.alex.blog.api.dto.CommentUpdateDto;
 import com.alex.blog.model.Comment;
 import com.alex.blog.model.Post;
 import com.alex.blog.service.PostService;
@@ -8,6 +11,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import config.ObjectMapperConfig;
 import config.TestDataSourceConfig;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -46,9 +50,8 @@ class CommentRestControllerTest {
   /*  @Autowired
     private PostService postService;*/
 
-    private static final Comment comment = new Comment(1L, "test comment1", 1L);
-    private final static Long VALID_ID=1L;
-    private final static Long INVALID_ID=1000000L;
+    private final static Long VALID_ID = 1L;
+    private final static Long INVALID_ID = 1000000L;
 
     @Autowired
     private ObjectMapper objectMapper;
@@ -68,28 +71,26 @@ class CommentRestControllerTest {
     }
 
     @Test
-    void getComment_shouldReturnCommentJsonSucess() throws Exception {
+    void getComment_shouldReturnCommentJsonSuccess() throws Exception {
 
-            Post expectedPost = new Post(1L, "test title1", "test desc1", List.of("test_tag1"), "1/image.jpg", 2L, 3L);
+        mockMvc.perform(get("/api/posts/{postId}/comments/{commentId}", VALID_ID, VALID_ID))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.valueOf("application/json;charset=UTF-8")))
+                .andExpect(jsonPath("$.id").value(VALID_ID))
+                .andExpect(jsonPath("$.postId").value(VALID_ID));
+    }
 
-            mockMvc.perform(get("/api/posts/{postId}/comments/{commentId}", VALID_ID,VALID_ID))
-                    .andExpect(status().isOk())
-                    .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
-                    .andExpect(jsonPath("$.text").value(comment.getText()))
-                    .andExpect(jsonPath("$.id").value(VALID_ID))
-                    .andExpect(jsonPath("$.postId").value(VALID_ID));
-        }
+    @Test
+    void getComments_shouldCommentNofFound404Fail() throws Exception {
+        mockMvc.perform(get("/api/posts/{postId}/comments/{commentId}", VALID_ID, INVALID_ID))
+                .andExpect(status().isNotFound())
+                .andExpect(content().contentType(MediaType.valueOf("text/plain;charset=ISO-8859-1")))
+                .andExpect(content().string("The comment not found by id:%d".formatted(INVALID_ID)));
+    }
 
-        @Test
-        void getComments_shouldCommentNofFound404Fail() throws Exception {
-            mockMvc.perform(get("/api/posts/{postId}/comments/{commentId}", VALID_ID,INVALID_ID))
-                    .andExpect(status().isNotFound())
-                    .andExpect(content().contentType(MediaType.valueOf("text/plain;charset=ISO-8859-1")))
-                    .andExpect(content().string("The comment not found by id:%d".formatted(INVALID_ID)));
-        }
     @Test
     void getComments_shouldPostNofFound404Fail() throws Exception {
-        mockMvc.perform(get("/api/posts/{postId}/comments/{commentId}", INVALID_ID,VALID_ID))
+        mockMvc.perform(get("/api/posts/{postId}/comments/{commentId}", INVALID_ID, VALID_ID))
                 .andExpect(status().isNotFound())
                 .andExpect(content().contentType(MediaType.valueOf("text/plain;charset=ISO-8859-1")))
                 .andExpect(content().string("The post not found by id:%d".formatted(INVALID_ID)));
@@ -99,12 +100,12 @@ class CommentRestControllerTest {
     void getComments_shouldReturnCommentsJsonArraySuccess() throws Exception {
         mockMvc.perform(get("/api/posts/{postId}/comments", VALID_ID))
                 .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
+                .andExpect(content().contentType(MediaType.valueOf("application/json;charset=UTF-8")))
                 .andExpect(jsonPath("$", hasSize(2)))
                 .andExpect(jsonPath("$[0].id").value(VALID_ID))
-                .andExpect(jsonPath("$[0].text").value(comment.getText()))
                 .andExpect(jsonPath("$[0].postId").value(VALID_ID));
     }
+
     @Test
     void getComments_shouldPostNotFound404Fail() throws Exception {
         mockMvc.perform(get("/api/posts/{postId}/comments", INVALID_ID))
@@ -116,42 +117,110 @@ class CommentRestControllerTest {
     @Test
     @Transactional
     void updateComment_shouldReturnUpdatedCommentJsonSuccess() throws Exception {
-         Comment expectedComment = new Comment(VALID_ID, "Updated test comment1", 2L);
+        CommentUpdateDto givenDto = new CommentUpdateDto(VALID_ID, "Updated test comment1", VALID_ID);
 
-        mockMvc.perform(put("/api/posts/{postId}/comments/{commentId}",VALID_ID,VALID_ID)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(expectedComment))
-                        .accept(MediaType.APPLICATION_JSON_VALUE))
+        mockMvc.perform(put("/api/posts/{postId}/comments/{commentId}", VALID_ID, VALID_ID)
+                        .contentType(MediaType.valueOf("application/json;charset=UTF-8"))
+                        .content(objectMapper.writeValueAsString(givenDto))
+                        .accept(MediaType.valueOf("application/json;charset=UTF-8")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(VALID_ID))
-                .andExpect(jsonPath("$.text").value(expectedComment.getText()))
-                .andExpect(jsonPath("$.postId").value(expectedComment.getPostId()));
+                .andExpect(jsonPath("$.text").value(givenDto.text()))
+                .andExpect(jsonPath("$.postId").value(givenDto.postId()));
     }
+
     @Test
     void updateComment_shouldCommentNotFound404Fail() throws Exception {
-
-        mockMvc.perform(put("/api/posts/{postId}/comments/{commentId}",VALID_ID,INVALID_ID)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(comment))
-                        .accept(MediaType.APPLICATION_JSON_VALUE))
+        CommentUpdateDto givenDto=new CommentUpdateDto(INVALID_ID,"Updated test comment1", VALID_ID);
+        mockMvc.perform(put("/api/posts/{postId}/comments/{commentId}", VALID_ID, INVALID_ID)
+                        .contentType(MediaType.valueOf("application/json;charset=UTF-8"))
+                        .content(objectMapper.writeValueAsString(givenDto)))
                 .andExpect(status().isNotFound())
-                 .andExpect(content().string("The comment not found by id:%d".formatted(INVALID_ID)));
+                .andExpect(content().string("The comment not found by id:%d".formatted(INVALID_ID)));
     }
+
     @Test
     void updateComment_shouldPostNotFound404Fail() throws Exception {
+        CommentUpdateDto givenDto=new CommentUpdateDto(INVALID_ID,"Updated test comment1", INVALID_ID);
 
-        mockMvc.perform(put("/api/posts/{postId}/comments/{commentId}",INVALID_ID,VALID_ID)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(comment))
-                        .accept(MediaType.APPLICATION_JSON_VALUE))
+        mockMvc.perform(put("/api/posts/{postId}/comments/{commentId}", INVALID_ID, INVALID_ID)
+                        .contentType(MediaType.valueOf("application/json;charset=UTF-8"))
+                        .content(objectMapper.writeValueAsString(givenDto)))
+                .andExpect(status().isNotFound())
+                .andExpect(content().string("The post not found by id:%d".formatted(INVALID_ID)));
+    }
+    @Test
+    void updateComment_shouldPostIdMismatch400Fail() throws Exception {
+        CommentCreateDto givenDto = new CommentCreateDto("NEW test comment1", INVALID_ID);
+
+        mockMvc.perform(put("/api/posts/{postId}/comments/{commentId}", VALID_ID, INVALID_ID)
+                        .contentType(MediaType.valueOf("application/json;charset=UTF-8"))
+                        .content(objectMapper.writeValueAsString(givenDto)))
+                .andExpect(status().isBadRequest());
+    }
+
+
+    @Test
+    @Transactional
+    void saveComment_shouldReturnPersistCommentJsonSuccess() throws Exception {
+        CommentCreateDto givenDto = new CommentCreateDto("NEW test comment1", VALID_ID);
+
+        mockMvc.perform(post("/api/posts/{postId}/comments", VALID_ID)
+                        .contentType(MediaType.valueOf("application/json;charset=UTF-8"))
+                        .content(objectMapper.writeValueAsString(givenDto))
+                        .accept(MediaType.valueOf("application/json;charset=UTF-8")))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.id").value(7L))
+                .andExpect(jsonPath("$.text").value(givenDto.text()))
+                .andExpect(jsonPath("$.postId").value(givenDto.postId()));
+    }
+
+    @Test
+    void saveComment_shouldMismatchPostId400Fail() throws Exception {
+        CommentCreateDto givenDto = new CommentCreateDto("NEW test comment1", VALID_ID);
+
+        mockMvc.perform(post("/api/posts/{postId}/comments", INVALID_ID)
+                        .contentType(MediaType.valueOf("application/json;charset=UTF-8"))
+                        .content(objectMapper.writeValueAsString(givenDto)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @Transactional
+    void saveComment_shouldPostNotFoundFail() throws Exception {
+        CommentCreateDto givenDto = new CommentCreateDto("NEW test comment1", INVALID_ID);
+
+        mockMvc.perform(post("/api/posts/{postId}/comments", INVALID_ID)
+                        .contentType(MediaType.valueOf("application/json;charset=UTF-8"))
+                        .content(objectMapper.writeValueAsString(givenDto)))
                 .andExpect(status().isNotFound())
                 .andExpect(content().string("The post not found by id:%d".formatted(INVALID_ID)));
     }
 
 
+    @Test
+    @Transactional
+    void delete_shouldDeleteCommentSuccess() throws Exception {
+        mockMvc.perform(delete("/api/posts/{postId}/comments/{commId}", VALID_ID, VALID_ID))
+                .andExpect(status().isOk());
 
+        Boolean existsComment = jdbcTemplate.queryForObject("SELECT EXISTS (SELECT 1 FROM comments WHERE id = ?)", Boolean.class, VALID_ID);
+
+        Assertions.assertThat(existsComment).isFalse();
+    }
 
     @Test
-    void delete() {
+    void delete_shouldDeleteCommentCommentNotFound404Fail() throws Exception {
+        mockMvc.perform(delete("/api/posts/{postId}/comments/{commId}", VALID_ID, INVALID_ID))
+                .andExpect(status().isNotFound())
+                .andExpect(content().string("The comment not found by id:%d".formatted(INVALID_ID)));
     }
+
+    @Test
+    void delete_shouldDeletePostNotFound404Fail() throws Exception {
+        mockMvc.perform(delete("/api/posts/{postId}/comments/{commId}", INVALID_ID, VALID_ID))
+                .andExpect(status().isNotFound())
+                .andExpect(content().string("The post not found by id:%d".formatted(INVALID_ID)));
+    }
+
 }
