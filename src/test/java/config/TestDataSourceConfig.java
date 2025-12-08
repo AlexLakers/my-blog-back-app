@@ -1,5 +1,6 @@
 package config;
 
+import lombok.SneakyThrows;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -26,9 +27,11 @@ public class TestDataSourceConfig {
         return new EmbeddedDatabaseBuilder()
                 .setType(EmbeddedDatabaseType.H2)
                 .addScript("classpath:schema-test.sql")
-                .addScript("classpath:data-test.sql")
+                //.addScript("classpath:data-test.sql")
                 .build();
     }
+
+
     @Bean
     public JdbcTemplate jdbcTemplate(DataSource dataSource) {
         return new JdbcTemplate(dataSource);
