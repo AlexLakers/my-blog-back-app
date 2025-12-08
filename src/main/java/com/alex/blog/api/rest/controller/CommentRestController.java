@@ -12,6 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Objects;
 
 @RestController
 @RequestMapping("/api/posts")
@@ -25,7 +26,7 @@ public class CommentRestController {
     public ResponseEntity<CommentReadDto> getComment(@PathVariable("postId") Long postId,
                                                      @PathVariable("commentId") Long commentId) {
 
-        return ResponseEntity.ok(commentService.findOneComment(postId,commentId));
+        return ResponseEntity.ok(commentService.findOneComment(postId, commentId));
     }
 
     @GetMapping(path = "{postId}/comments",produces = MediaType.APPLICATION_JSON_VALUE)
@@ -61,10 +62,11 @@ public class CommentRestController {
     }
 
     @DeleteMapping("/{postId}/comments/{commentId}")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @ResponseStatus(HttpStatus.OK)
     public void delete(@PathVariable("postId") Long postId,
                        @PathVariable("commentId") Long commentId) {
         commentService.deleteComment(postId, commentId);
     }
+
 
 }
