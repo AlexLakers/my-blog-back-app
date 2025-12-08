@@ -39,9 +39,14 @@ public class CommentRestController {
     public ResponseEntity<CommentReadDto> updateComment(@PathVariable("postId") Long postId,
                                                         @PathVariable("commentId") Long commentId,
                                                         @RequestBody CommentUpdateDto commentUpdateDto) {
-        return ResponseEntity
+
+        return Objects.equals(postId, commentUpdateDto.postId()) && Objects.equals(commentId, commentUpdateDto.id())
+                ? ResponseEntity
                 .status(HttpStatus.OK)
-                .body(commentService.updateComment(postId, commentId, commentUpdateDto));
+
+                .body(commentService.updateComment(postId, commentId, commentUpdateDto))
+                : ResponseEntity
+                .status(HttpStatus.BAD_REQUEST).build();
     }
 
     @PostMapping(path = "/{postId}/comments", consumes = MediaType.APPLICATION_JSON_VALUE)
