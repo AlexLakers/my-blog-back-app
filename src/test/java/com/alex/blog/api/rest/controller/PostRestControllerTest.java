@@ -90,6 +90,89 @@ class PostRestControllerTest {
     }
 
 
+    @Test
+    void findById_shouldReturnPostJsonSuccess() throws Exception {
+        Post expectedPost = new Post(1L, "test title1", "test desc1", List.of("test_tag1"), "1/image.jpg", 2L, 3L);
+
+        mockMvc.perform(get("/api/posts/{postId}", VALID_ID))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
+                .andExpect(jsonPath("$.title").value(expectedPost.getTitle()))
+                .andExpect(jsonPath("$.id").value(expectedPost.getId()))
+                .andExpect(jsonPath("$.tags", hasSize(1)))
+                .andExpect(jsonPath("$.tags[0]", is(expectedPost.getTags().get(0))));
+    }
+
+
+    @Test
+    void findById_shouldNotFound404() throws Exception {
+
+        mockMvc.perform(get("/api/posts/{postId}", INVALID_ID))
+                .andExpect(status().isNotFound())
+                .andExpect(content().string("The post not found by id:%d".formatted(INVALID_ID)));
+    }
+
+
+
+    @Test
+    void create_shouldReturnCreatedJson() throws Exception {
+        Post newPost = new Post(null, "newCreateTitle", "description", List.of("newCreateTag"), "new/path", 0L, 0L);
+
+        mockMvc.perform(post("/api/posts")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(newPost))
+                        .accept(MediaType.APPLICATION_JSON_VALUE))
+                .andExpect(status().isCreated())
+                .andExpect(content().contentType(MediaType.valueOf("application/json;charset=UTF-8")))
+                .andExpect(jsonPath("$.id").value(4L))
+                .andExpect(jsonPath("$.title").value(newPost.getTitle()));
+    }
+
+    @Test
+    void create_shouldTitleAlreadyExistBadRequest400() throws Exception {
+        Post newPost = new Post(null, "test title1", "description", List.of("newCreateTag"), "new/path", 0L, 0L);
+
+        mockMvc.perform(post("/api/posts")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(newPost))
+                        .accept(MediaType.APPLICATION_JSON_VALUE))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentType(MediaType.valueOf("application/json;charset=UTF-8")))
+                .andExpect(content().string("The title: %s already exists".formatted(newPost.getTitle())));
+    }
+
+
+    @Test
+    @Transactional
+    void update_shouldReturnUpdatedJsonSuccess() throws Exception {
+        Post expectedPost = new Post(VALID_ID, "newUpdateTitle", "description", List.of("newUpdateTag"), "new/path", 1L, 1L);
+
+        mockMvc.perform(put("/api/posts/{postId}",VALID_ID)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(expectedPost))
+                        .accept(MediaType.APPLICATION_JSON_VALUE))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.valueOf("application/json;charset=UTF-8")))
+                .andExpect(jsonPath("$.id").value(VALID_ID))
+                .andExpect(jsonPath("$.title").value(expectedPost.getTitle()))
+                .andExpect(jsonPath("$.id").value(expectedPost.getId()))
+                .andExpect(jsonPath("$.tags", hasSize(1)))
+                .andExpect(jsonPath("$.tags[0]", is(expectedPost.getTags().get(0))));
+    }
+
+    @Test
+    void update_shouldReturnPostNotFound404() throws Exception {
+        Post expectedPost = new Post();
+        expectedPost.setId(INVALID_ID);
+
+        mockMvc.perform(put("/api/posts/{postId}", INVALID_ID)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(expectedPost))
+                        .accept(MediaType.APPLICATION_JSON_VALUE))
+                .andExpect(status().isNotFound())
+                .andExpect(content().contentType(MediaType.valueOf("application/json;charset=UTF-8")))
+                .andExpect(content().string("The post not found by id:%d".formatted(INVALID_ID)));
+    }
 
 
     @SneakyThrows
