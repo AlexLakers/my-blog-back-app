@@ -1,28 +1,17 @@
 package com.alex.blog.repository;
 
 import com.alex.blog.model.Comment;
-import com.alex.blog.model.Post;
-import config.TestDataSourceConfig;
+import com.alex.blog.BaseIntegrationTest;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.TestPropertySource;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
 
-@ExtendWith(SpringExtension.class)
-@ContextConfiguration(classes = TestDataSourceConfig.class)
-@TestPropertySource(locations = "classpath:application-test.properties")
-@Transactional
-class CommentRepositoryTest {
+class CommentRepositoryIT extends BaseIntegrationTest {
 
     private static final Comment comment = new Comment(1L, "test comment1", 1L);
     private final static Long VALID_ID=1L;

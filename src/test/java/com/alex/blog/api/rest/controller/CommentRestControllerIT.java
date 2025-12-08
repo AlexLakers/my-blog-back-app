@@ -1,16 +1,10 @@
 package com.alex.blog.api.rest.controller;
 
-import com.alex.blog.WebConfiguration;
 import com.alex.blog.api.dto.CommentCreateDto;
-import com.alex.blog.api.dto.CommentReadDto;
 import com.alex.blog.api.dto.CommentUpdateDto;
-import com.alex.blog.model.Comment;
-import com.alex.blog.model.Post;
-import com.alex.blog.service.PostService;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import config.ObjectMapperConfig;
-import config.TestDataSourceConfig;
+import com.alex.blog.BaseIntegrationTest;
+import config.TestWebConfig;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -19,7 +13,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
@@ -28,28 +21,20 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.filter.CharacterEncodingFilter;
 
-import java.util.List;
-
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
-import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 
 @ExtendWith(SpringExtension.class)
-@ContextConfiguration(classes = {WebConfiguration.class, TestDataSourceConfig.class, ObjectMapperConfig.class})
-
+@ContextConfiguration(classes = TestWebConfig.class)
 @WebAppConfiguration
-@TestPropertySource(locations = "classpath:application-test.properties")
-class CommentRestControllerTest {
+class CommentRestControllerIT extends BaseIntegrationTest {
+
     @Autowired
     private WebApplicationContext webApplicationContext;
-
-  /*  @Autowired
-    private PostService postService;*/
-
     private final static Long VALID_ID = 1L;
     private final static Long INVALID_ID = 1000000L;
 
