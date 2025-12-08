@@ -47,9 +47,12 @@ public class CommentRestController {
     @PostMapping(path = "/{postId}/comments", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<CommentReadDto> saveComment(@PathVariable("postId") Long postId,
                                                       @RequestBody CommentCreateDto commentCreateDto) {
+        return Objects.equals(postId, commentCreateDto.postId())
+                ? ResponseEntity.status(HttpStatus.CREATED)
+                .body(commentService.saveComment(postId, commentCreateDto))
 
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(commentService.saveComment(postId, commentCreateDto));
+                : ResponseEntity
+                .status(HttpStatus.BAD_REQUEST).build();
     }
 
     @DeleteMapping("/{postId}/comments/{commentId}")
