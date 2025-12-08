@@ -3,10 +3,9 @@ package com.alex.blog.repository;
 import com.alex.blog.model.Post;
 import com.alex.blog.repository.impl.JdbcNativePostSearchImpl;
 import com.alex.blog.search.Criteria;
-import config.TestDataSourceConfig;
+import com.alex.blog.BaseIntegrationTest;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -14,20 +13,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.TestPropertySource;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 
-@ExtendWith(SpringExtension.class)
-@ContextConfiguration(classes = TestDataSourceConfig.class)
-@TestPropertySource(locations = "classpath:application-test.properties")
-@Transactional
-class PostSearchRepositoryTest {
+
+class PostSearchRepositoryIT extends BaseIntegrationTest {
 
     private final static Post post = new Post(1L, "test title1", "test desc1", List.of("test_tag1"), null, 2L, 3L);
 
@@ -51,10 +43,6 @@ class PostSearchRepositoryTest {
 
         Assertions.assertThat(actualPost.isEmpty()).isTrue();
     }
-
-
-
-
 
     @ParameterizedTest
     @MethodSource("getArgsForSearchByCriteria")
@@ -86,8 +74,4 @@ class PostSearchRepositoryTest {
         );
     }
 
-
-    @Test
-    void findPostById() {
-    }
 }

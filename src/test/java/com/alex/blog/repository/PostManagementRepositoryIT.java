@@ -2,38 +2,29 @@ package com.alex.blog.repository;
 
 import com.alex.blog.model.Comment;
 import com.alex.blog.model.Post;
-import config.TestDataSourceConfig;
+import com.alex.blog.BaseIntegrationTest;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.TestPropertySource;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 
-@ExtendWith(SpringExtension.class)
-@ContextConfiguration(classes = TestDataSourceConfig.class)
-@TestPropertySource(locations = "classpath:application-test.properties")
-@Transactional
-class PostManagementRepositoryTest {
+
+class PostManagementRepositoryIT extends BaseIntegrationTest {
 
     @Autowired
     private PostManagementRepository postManagementRepository;
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
-    private static final Comment comment = new Comment(1L, "test comment1", 1L);
     private final static Post post = new Post(1L, "test title1", "test desc1", List.of("test_tag1"), "1/image.jpg", 2L, 3L);
     private final static Long VALID_ID = 1L;
 
-    // @CsvSource({ "alex, 30", "brian, 35", "charles, 40" }) void testWithCsvSource(String name, int age) { assertNotNull(name); assertTrue(age > 0); }.
 
     @ParameterizedTest
     @CsvSource(
@@ -58,9 +49,9 @@ class PostManagementRepositoryTest {
 
     @Test
     void getImagePath_shouldReturnPath() {
-        String actualPath = postManagementRepository.getImagePath(VALID_ID);
+        Optional<String> actualPath = postManagementRepository.getImagePath(VALID_ID);
 
-        Assertions.assertThat(actualPath).isEqualTo(post.getImagePath());
+        Assertions.assertThat(actualPath.get()).isEqualTo(post.getImagePath());
     }
 
 
@@ -74,7 +65,6 @@ class PostManagementRepositoryTest {
 
     @Test
     void incrementLikesCount_shouldReturnIncrementLikesCount() {
-        // Long expectedLikes = jdbcTemplate.queryForObject("SELECT likes_count FROM posts WHERE id = ?", Long.class, VALID_ID) + 1;
         Long expectedLikes = post.getLikesCount() + 1;
 
         Long actualLikes = postManagementRepository.incrementLikesCount(VALID_ID);
@@ -94,9 +84,9 @@ class PostManagementRepositoryTest {
     }
 
     @ParameterizedTest
+
     @ValueSource(ints = {-1, 1, 2, -2})
     void incrementCommentsCount_shouldReturnIncrementCommentsCount(int incValue) {
-        // Long expectedComments = jdbcTemplate.queryForObject("SELECT comments_count FROM posts WHERE id = ?", Long.class, VALID_ID)+incValue;
         Long expectedComments = post.getCommentsCount() + incValue;
 
         Long actualComments = postManagementRepository.incrementCommentsCount(VALID_ID, (long) incValue);

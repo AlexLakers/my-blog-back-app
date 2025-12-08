@@ -1,16 +1,10 @@
 package com.alex.blog.api.rest.controller;
 
-import com.alex.blog.WebConfiguration;
+import com.alex.blog.api.dto.PostCreateDto;
 import com.alex.blog.api.dto.PostReadDto;
 import com.alex.blog.model.Post;
-import com.alex.blog.search.PostPageDto;
-import com.alex.blog.search.SearchDto;
-import com.alex.blog.service.CommentService;
-import com.alex.blog.service.PostService;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import config.ObjectMapperConfig;
-import config.TestDataSourceConfig;
+import com.alex.blog.BaseIntegrationTest;
 import config.TestWebConfig;
 import lombok.SneakyThrows;
 import org.assertj.core.api.Assertions;
@@ -20,53 +14,41 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.TestPropertySource;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.assertj.MockMvcTester;
-import org.springframework.test.web.servlet.request.MockMultipartHttpServletRequestBuilder;
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.filter.CharacterEncodingFilter;
 //org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.stream.Stream;
 
 import static org.hamcrest.Matchers.*;
 
-import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 
 @ExtendWith(SpringExtension.class)
-@ContextConfiguration(classes = {WebConfiguration.class, TestDataSourceConfig.class, ObjectMapperConfig.class})
-
+@ContextConfiguration(classes = TestWebConfig.class)
 @WebAppConfiguration
-@TestPropertySource(locations = "classpath:application-test.properties")
-class PostRestControllerTest {
+class PostRestControllerIT extends BaseIntegrationTest {
 
     @Autowired
     private WebApplicationContext webApplicationContext;
 
-    @Autowired
-    private PostService postService;
+ /*   @Autowired
+    private PostService postService;*/
 
     private static final Long VALID_ID = 1L;
     private static final Long INVALID_ID = 10000L;
@@ -119,9 +101,9 @@ class PostRestControllerTest {
         Post newPost = new Post(null, "newCreateTitle", "description", List.of("newCreateTag"), "new/path", 0L, 0L);
 
         mockMvc.perform(post("/api/posts")
-                        .contentType(MediaType.APPLICATION_JSON)
+                        .contentType(MediaType.valueOf("application/json;charset=UTF-8"))
                         .content(objectMapper.writeValueAsString(newPost))
-                        .accept(MediaType.APPLICATION_JSON_VALUE))
+                        .accept(MediaType.valueOf("application/json;charset=UTF-8")))
                 .andExpect(status().isCreated())
                 .andExpect(content().contentType(MediaType.valueOf("application/json;charset=UTF-8")))
                 .andExpect(jsonPath("$.id").value(4L))
@@ -130,15 +112,14 @@ class PostRestControllerTest {
 
     @Test
     void create_shouldTitleAlreadyExistBadRequest400() throws Exception {
-        Post newPost = new Post(null, "test title1", "description", List.of("newCreateTag"), "new/path", 0L, 0L);
-
+        PostCreateDto givenDto=new PostCreateDto("test title1","description", List.of("newCreateTag"));
         mockMvc.perform(post("/api/posts")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(newPost))
-                        .accept(MediaType.APPLICATION_JSON_VALUE))
+                        .contentType(MediaType.valueOf("application/json;charset=UTF-8"))
+                        .content(objectMapper.writeValueAsString(givenDto))
+                        .accept(MediaType.valueOf("application/json;charset=UTF-8")))
                 .andExpect(status().isBadRequest())
                 .andExpect(content().contentType(MediaType.valueOf("application/json;charset=UTF-8")))
-                .andExpect(content().string("The title: %s already exists".formatted(newPost.getTitle())));
+                .andExpect(content().string("The title: %s already exists".formatted(givenDto.title())));
     }
 
 
@@ -162,15 +143,12 @@ class PostRestControllerTest {
 
     @Test
     void update_shouldReturnPostNotFound404() throws Exception {
-        Post expectedPost = new Post();
-        expectedPost.setId(INVALID_ID);
+        PostCreateDto givenDto=new PostCreateDto("test title","tests text",List.of("test tag"));
 
         mockMvc.perform(put("/api/posts/{postId}", INVALID_ID)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(expectedPost))
-                        .accept(MediaType.APPLICATION_JSON_VALUE))
+                        .contentType(MediaType.valueOf("application/json;charset=UTF-8"))
+                        .content(objectMapper.writeValueAsString(givenDto)))
                 .andExpect(status().isNotFound())
-                .andExpect(content().contentType(MediaType.valueOf("application/json;charset=UTF-8")))
                 .andExpect(content().string("The post not found by id:%d".formatted(INVALID_ID)));
     }
 
@@ -222,7 +200,6 @@ class PostRestControllerTest {
     @Test
 
     void updateImage_ShouldPostNotFound404() throws Exception {
-
 
         mockMvc.perform(get("/api/posts/{id}/image", INVALID_ID))
                 .andExpect(status().isNotFound())
