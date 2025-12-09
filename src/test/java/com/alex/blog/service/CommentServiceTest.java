@@ -166,10 +166,26 @@ class CommentServiceTest {
 
 
     @Test
-    void deleteComment() {
+    void deleteComment_shouldPostThrowEntityNotFoundExceptionFail() {
+        Mockito.when(postManagementRepository.existsById(INVALID_ID)).thenReturn(false);
+
+
+        Assertions.assertThatExceptionOfType(EntityNotFoundException.class)
+                .isThrownBy(()->commentService.deleteComment(INVALID_ID,INVALID_ID))
+                .withMessage("The post not found by id:%d".formatted(INVALID_ID));
+
+        verify(commentRepository,times(0)).delete(INVALID_ID);
     }
 
     @Test
-    void findCommentsByPostId() {
+    void findCommentsByPostId_shouldCommentThrowEntityNotFoundExceptionFail() {
+        Mockito.when(postManagementRepository.existsById(VALID_ID)).thenReturn(true);
+        Mockito.when(commentRepository.findById(INVALID_ID)).thenReturn(Optional.empty());
+
+        Assertions.assertThatExceptionOfType(EntityNotFoundException.class)
+                .isThrownBy(()->commentService.deleteComment(VALID_ID,INVALID_ID))
+                .withMessage("The comment not found by id:%d".formatted(INVALID_ID));
+
+        verify(commentRepository,times(0)).delete(INVALID_ID);
     }
 }
