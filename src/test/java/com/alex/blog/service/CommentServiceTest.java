@@ -2,6 +2,7 @@ package com.alex.blog.service;
 
 import com.alex.blog.api.dto.CommentCreateDto;
 import com.alex.blog.api.dto.CommentReadDto;
+import com.alex.blog.api.dto.CommentUpdateDto;
 import com.alex.blog.exception.EntityCreationException;
 import com.alex.blog.exception.EntityNotFoundException;
 import com.alex.blog.mapper.CommentMapper;
@@ -113,8 +114,56 @@ class CommentServiceTest {
     }
 
     @Test
-    void updateComment() {
+    void updateComment_shouldReturnUpdatedCommentSuccess() {
+        CommentReadDto expectedDto = new CommentReadDto(VALID_ID, "updated comment", VALID_ID);
+        CommentUpdateDto givenDto=new CommentUpdateDto(VALID_ID,"updated comment", VALID_ID);
+
+        Mockito.when(postManagementRepository.existsById(VALID_ID)).thenReturn(true);
+        Mockito.when(commentRepository.findById(VALID_ID)).thenReturn(Optional.of(comment));
+        Mockito.when(commentRepository.update(comment)).thenReturn(comment);
+        Mockito.doNothing().when(commentMapper).updateComment(givenDto,comment);
+        Mockito.when(commentMapper.toCommentReadDto(comment)).thenReturn(expectedDto);
+
+        CommentReadDto actualDto=commentService.updateComment(VALID_ID,VALID_ID,givenDto);
+
+        Assertions.assertThat(actualDto).isEqualTo(expectedDto);
+        verify(commentRepository, times(1)).update(comment);
     }
+    @Test
+    void updateComment_shouldPostThrowEntityNotFoundExceptionFail() {
+        CommentUpdateDto givenDto=new CommentUpdateDto(VALID_ID,"", VALID_ID);
+
+        Mockito.when(postManagementRepository.existsById(INVALID_ID)).thenReturn(false);
+
+        Assertions.assertThatExceptionOfType(EntityNotFoundException.class)
+                .isThrownBy(()->commentService.updateComment(INVALID_ID,INVALID_ID,givenDto))
+                        .withMessage("The post not found by id:%d".formatted(INVALID_ID));
+
+        verify(commentMapper, times(0)).updateComment(givenDto,comment);
+        verify(commentRepository, times(0)).update(comment);
+        verify(commentMapper, times(0)).toCommentReadDto(comment);
+    }
+
+
+    @Test
+    void updateComment_shouldCommentThrowEntityNotFoundExceptionFail() {
+        CommentUpdateDto givenDto=new CommentUpdateDto(INVALID_ID,"", VALID_ID);
+
+        Mockito.when(postManagementRepository.existsById(VALID_ID)).thenReturn(true);
+
+        Assertions.assertThatExceptionOfType(EntityNotFoundException.class)
+                .isThrownBy(()->commentService.updateComment(VALID_ID,INVALID_ID,givenDto))
+                .withMessage("The comment not found by id:%d".formatted(INVALID_ID));
+
+        verify(commentMapper, times(0)).updateComment(givenDto,comment);
+        verify(commentRepository, times(0)).update(comment);
+        verify(commentMapper, times(0)).toCommentReadDto(comment);
+    }
+
+
+
+
+
 
     @Test
     void deleteComment() {
