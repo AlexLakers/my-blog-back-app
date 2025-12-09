@@ -21,6 +21,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.*;
@@ -29,9 +30,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
 public class PostServiceImpl implements PostService {
-
     private final PostManagementRepository postManagementRepository;
     private final PostSearchRepository postSearchRepository;
     private final PostMapper postMapper;
@@ -41,6 +40,7 @@ public class PostServiceImpl implements PostService {
 
 
     @Override
+    @Transactional(readOnly = true)
     public PostReadDto findOnePost(Long postId) {
         return postSearchRepository.findPostById(postId)
                 .map(postMapper::toPostReadDto)
@@ -59,6 +59,7 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public PostPageDto findPageByCriteria(SearchDto searchDto) {
         Map<Boolean, List<String>> tokens = Arrays.stream(searchDto.search().split(" "))
                 .filter(Predicate.not(String::isEmpty))
@@ -100,11 +101,14 @@ public class PostServiceImpl implements PostService {
         Post copiedPost = postSearchRepository.findPostById(postId)
                 .map(post -> {
                     postMapper.updatePost(postUpdateDto, post);
+                    System.out.println(post);
                     return post;
                 }).orElseThrow(() -> new EntityNotFoundException("The post not found by id:%d"
                         .formatted(postId)));
 
-        return postMapper.toPostReadDto(postManagementRepository.update(copiedPost));
+        var p=postMapper.toPostReadDto(postManagementRepository.update(copiedPost));
+        System.out.println("UPDATED"+p);
+                return p;
     }
 
     @Transactional
@@ -134,18 +138,22 @@ public class PostServiceImpl implements PostService {
     @Override
     @Transactional
     public void updateImage(long postId, MultipartFile file) {
-
         if (!postManagementRepository.existsById(postId)) {
             throw new EntityNotFoundException("The post with id:%1$d not found"
                     .formatted(postId));
         }
 
-        deleteOldImageIfExists(postId);
+        Optional<String> maybeOleName=postManagementRepository.getImagePath(postId)
+                .filter(path -> !path.isEmpty());
+
 
         String newImagePath = generateNewImagePath(postId, file.getOriginalFilename());
 
         fileService.saveFile(file, newImagePath);
         postManagementRepository.updateImagePath(postId, newImagePath);
+
+        maybeOleName.ifPresent(fileService::deleteFile);
+
 
     }
 
