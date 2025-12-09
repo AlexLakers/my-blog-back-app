@@ -1,6 +1,7 @@
 package com.alex.blog.service;
 
 import com.alex.blog.api.dto.PostReadDto;
+import com.alex.blog.api.dto.PostUpdateDto;
 import com.alex.blog.exception.EntityNotFoundException;
 import com.alex.blog.mapper.CommentMapper;
 import com.alex.blog.mapper.PostMapper;
@@ -44,14 +45,15 @@ class PostServiceTest {
 
     @Test
     void findOnePost_shouldReturnPostSuccess() {
-        PostReadDto expectedDto=new PostReadDto(1L, "test title1", "test desc1", List.of("test_tag1"), 2L, 3L);
+        PostReadDto expectedDto = new PostReadDto(1L, "test title1", "test desc1", List.of("test_tag1"), 2L, 3L);
         Mockito.when(postSearchRepository.findPostById(VALID_ID)).thenReturn(Optional.of(post));
         Mockito.when(postMapper.toPostReadDto(post)).thenReturn(expectedDto);
 
-        PostReadDto actualDto=postService.findOnePost(VALID_ID);
+        PostReadDto actualDto = postService.findOnePost(VALID_ID);
 
         Assertions.assertThat(actualDto).isEqualTo(expectedDto);
     }
+
     @Test
     void findOnePost_shouldPostThrowEntityNotFoundException() {
         Mockito.when(postSearchRepository.findPostById(INVALID_ID)).thenReturn(Optional.empty());
@@ -64,11 +66,11 @@ class PostServiceTest {
 
     @Test
     void incrementLikesCount_shouldReturnIncLikesCountSuccess() {
-        Long expectedLikes=100L;
+        Long expectedLikes = 100L;
         Mockito.when(postManagementRepository.existsById(VALID_ID)).thenReturn(true);
         Mockito.when(postManagementRepository.incrementLikesCount(VALID_ID)).thenReturn(expectedLikes);
 
-        Long actualLikes= postService.incrementLikesCount(VALID_ID);
+        Long actualLikes = postService.incrementLikesCount(VALID_ID);
 
         Assertions.assertThat(actualLikes).isEqualTo(expectedLikes);
     }
@@ -87,8 +89,33 @@ class PostServiceTest {
     }
 
     @Test
-    void updatePost() {
+    void updatePost_shouldReturnUpdatedPostSuccess() {
+        PostReadDto expectedDto = new PostReadDto(1L, "test title1", "test desc1", List.of("test_tag1"), 2L, 3L);
+        PostUpdateDto givenDto=new PostUpdateDto(VALID_ID,"testTitle","testText",List.of("test_tag1"));
+        Mockito.when(postSearchRepository.findPostById(VALID_ID)).thenReturn(Optional.of(post));
+        Mockito.doNothing().when(postMapper).updatePost(givenDto,post);
+        Mockito.when(postManagementRepository.update(Mockito.any(Post.class))).thenReturn(post);
+        Mockito.when(postMapper.toPostReadDto(post)).thenReturn(expectedDto);
+
+        PostReadDto actualDto = postService.updatePost(VALID_ID, givenDto);
+
+        Assertions.assertThat(actualDto).isEqualTo(expectedDto);
     }
+
+    @Test
+    void updatePost_shouldPostThrowEntityNotFoundExceptionFail() {
+        //PostReadDto expectedDto = new PostReadDto(1L, "test title1", "test desc1", List.of("test_tag1"), 2L, 3L);
+        PostUpdateDto givenDto=new PostUpdateDto(INVALID_ID,"testTitle","testText",List.of("test_tag1"));
+        Mockito.when(postSearchRepository.findPostById(INVALID_ID)).thenReturn(Optional.empty());
+
+        Assertions.assertThatExceptionOfType(EntityNotFoundException.class)
+                .isThrownBy(()->postService.updatePost(INVALID_ID,givenDto))
+                .withMessage("The post not found by id:%d".formatted(INVALID_ID));
+    }
+
+
+
+
 
     @Test
     void savePost() {
