@@ -3,6 +3,7 @@ package com.alex.blog.service;
 import com.alex.blog.api.dto.CommentCreateDto;
 import com.alex.blog.api.dto.CommentReadDto;
 import com.alex.blog.api.dto.CommentUpdateDto;
+import com.alex.blog.config.TestServiceConfig;
 import com.alex.blog.exception.EntityCreationException;
 import com.alex.blog.exception.EntityNotFoundException;
 import com.alex.blog.mapper.CommentMapper;
@@ -11,30 +12,45 @@ import com.alex.blog.repository.CommentRepository;
 import com.alex.blog.repository.PostManagementRepository;
 import com.alex.blog.service.impl.CommentServiceImpl;
 import org.assertj.core.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
+import java.util.Locale;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-@ExtendWith(MockitoExtension.class)
+@ExtendWith(SpringExtension.class)
+@ContextConfiguration(classes = TestServiceConfig.class)
 class CommentServiceTest {
 
-    @Mock
-    private CommentRepository commentRepository;
-    @Mock
-    private CommentMapper commentMapper;
-    @Mock
-    private PostManagementRepository postManagementRepository;
 
-    @InjectMocks
-    private CommentServiceImpl commentService;
+    @Autowired
+    private CommentRepository commentRepository;
+    @Autowired
+    private CommentMapper commentMapper;
+    @Autowired
+    private PostManagementRepository postManagementRepository;
+    @Autowired
+    private MessageSource messageSource;
+
+    @Autowired
+    private CommentService commentService;
+
+    @BeforeEach
+    void resetMocks() {
+        reset(postManagementRepository,commentRepository,commentMapper);
+    }
 
     private final static Long VALID_ID = 1L;
     private final static Long INVALID_ID = 10000L;
@@ -63,7 +79,7 @@ class CommentServiceTest {
 
         Assertions.assertThatExceptionOfType(EntityNotFoundException.class)
                 .isThrownBy(() -> commentService.findOneComment(INVALID_ID, VALID_ID))
-                .withMessage("The post not found by id:%d".formatted(INVALID_ID));
+                .withMessage(messageSource.getMessage(MessageKey.POST_NOT_FOUND, new Object[]{INVALID_ID}, Locale.ENGLISH));
 
         verify(commentRepository, times(0)).findById(INVALID_ID);
         verify(commentMapper, times(0)).toCommentReadDto(comment);
@@ -77,7 +93,7 @@ class CommentServiceTest {
 
         Assertions.assertThatExceptionOfType(EntityNotFoundException.class)
                 .isThrownBy(() -> commentService.findOneComment(VALID_ID, INVALID_ID))
-                .withMessage("The comment not found by id:%d".formatted(INVALID_ID));
+                .withMessage(messageSource.getMessage(MessageKey.COMMENT_NOT_FOUND, new Object[]{INVALID_ID}, Locale.ENGLISH));
 
         verify(commentMapper, times(0)).toCommentReadDto(comment);
     }
@@ -105,7 +121,7 @@ class CommentServiceTest {
 
         Assertions.assertThatExceptionOfType(EntityNotFoundException.class)
                 .isThrownBy(() -> commentService.saveComment(INVALID_ID, givenDto))
-                .withMessage("The post not found by id:%d".formatted(INVALID_ID));
+                .withMessage(messageSource.getMessage(MessageKey.POST_NOT_FOUND, new Object[]{INVALID_ID}, Locale.ENGLISH));
 
         verify(commentMapper, times(0)).toComment(givenDto);
         verify(commentRepository, times(0)).save(comment);
@@ -136,7 +152,7 @@ class CommentServiceTest {
 
         Assertions.assertThatExceptionOfType(EntityNotFoundException.class)
                 .isThrownBy(()->commentService.updateComment(INVALID_ID,INVALID_ID,givenDto))
-                        .withMessage("The post not found by id:%d".formatted(INVALID_ID));
+                        .withMessage(messageSource.getMessage(MessageKey.POST_NOT_FOUND, new Object[]{INVALID_ID}, Locale.ENGLISH));
 
         verify(commentMapper, times(0)).updateComment(givenDto,comment);
         verify(commentRepository, times(0)).update(comment);
@@ -152,7 +168,7 @@ class CommentServiceTest {
 
         Assertions.assertThatExceptionOfType(EntityNotFoundException.class)
                 .isThrownBy(()->commentService.updateComment(VALID_ID,INVALID_ID,givenDto))
-                .withMessage("The comment not found by id:%d".formatted(INVALID_ID));
+                .withMessage(messageSource.getMessage(MessageKey.COMMENT_NOT_FOUND, new Object[]{INVALID_ID}, Locale.ENGLISH));
 
         verify(commentMapper, times(0)).updateComment(givenDto,comment);
         verify(commentRepository, times(0)).update(comment);
@@ -171,7 +187,7 @@ class CommentServiceTest {
 
         Assertions.assertThatExceptionOfType(EntityNotFoundException.class)
                 .isThrownBy(()->commentService.deleteComment(INVALID_ID,INVALID_ID))
-                .withMessage("The post not found by id:%d".formatted(INVALID_ID));
+                .withMessage(messageSource.getMessage(MessageKey.POST_NOT_FOUND, new Object[]{INVALID_ID}, Locale.ENGLISH));
 
         verify(commentRepository,times(0)).delete(INVALID_ID);
     }
@@ -183,7 +199,7 @@ class CommentServiceTest {
 
         Assertions.assertThatExceptionOfType(EntityNotFoundException.class)
                 .isThrownBy(()->commentService.deleteComment(VALID_ID,INVALID_ID))
-                .withMessage("The comment not found by id:%d".formatted(INVALID_ID));
+                .withMessage(messageSource.getMessage(MessageKey.COMMENT_NOT_FOUND, new Object[]{INVALID_ID}, Locale.ENGLISH));
 
         verify(commentRepository,times(0)).delete(INVALID_ID);
     }

@@ -12,7 +12,6 @@ import org.springframework.transaction.annotation.Transactional;
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration(classes = TestDataSourceConfig.class)
 @TestPropertySource(locations = "classpath:application-test.properties")
-@Transactional
 public abstract class BaseIntegrationTest {
 
     @Autowired

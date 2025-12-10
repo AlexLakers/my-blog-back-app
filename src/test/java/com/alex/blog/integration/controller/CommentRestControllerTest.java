@@ -2,6 +2,7 @@ package com.alex.blog.integration.controller;
 
 import com.alex.blog.api.dto.CommentCreateDto;
 import com.alex.blog.api.dto.CommentUpdateDto;
+import com.alex.blog.service.MessageKey;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.alex.blog.config.BaseIntegrationTest;
 import com.alex.blog.config.TestWebConfig;
@@ -10,6 +11,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ContextConfiguration;
@@ -21,6 +23,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.filter.CharacterEncodingFilter;
 
+import java.util.Locale;
+
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -28,7 +32,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 
-@ExtendWith(SpringExtension.class)
+
 @ContextConfiguration(classes = TestWebConfig.class)
 @WebAppConfiguration
 class CommentRestControllerTest extends BaseIntegrationTest {
@@ -42,7 +46,8 @@ class CommentRestControllerTest extends BaseIntegrationTest {
     private ObjectMapper objectMapper;
     @Autowired
     private JdbcTemplate jdbcTemplate;
-
+    @Autowired
+    private MessageSource messageSource;
     private MockMvc mockMvc;
 
     @BeforeEach
@@ -54,6 +59,7 @@ class CommentRestControllerTest extends BaseIntegrationTest {
                 .alwaysDo(print())
                 .build();
     }
+
 
     @Test
     void getComment_shouldReturnCommentJsonSuccess() throws Exception {
@@ -70,7 +76,7 @@ class CommentRestControllerTest extends BaseIntegrationTest {
         mockMvc.perform(get("/api/posts/{postId}/comments/{commentId}", VALID_ID, INVALID_ID))
                 .andExpect(status().isNotFound())
                 .andExpect(content().contentType(MediaType.valueOf("text/plain;charset=ISO-8859-1")))
-                .andExpect(content().string("The comment not found by id:%d".formatted(INVALID_ID)));
+                .andExpect(content().string(messageSource.getMessage(MessageKey.COMMENT_NOT_FOUND, new Object[]{INVALID_ID}, Locale.ENGLISH)));
     }
 
     @Test
@@ -78,7 +84,7 @@ class CommentRestControllerTest extends BaseIntegrationTest {
         mockMvc.perform(get("/api/posts/{postId}/comments/{commentId}", INVALID_ID, VALID_ID))
                 .andExpect(status().isNotFound())
                 .andExpect(content().contentType(MediaType.valueOf("text/plain;charset=ISO-8859-1")))
-                .andExpect(content().string("The post not found by id:%d".formatted(INVALID_ID)));
+                .andExpect(content().string(messageSource.getMessage(MessageKey.POST_NOT_FOUND, new Object[]{INVALID_ID}, Locale.ENGLISH)));
     }
 
     @Test
@@ -96,7 +102,7 @@ class CommentRestControllerTest extends BaseIntegrationTest {
         mockMvc.perform(get("/api/posts/{postId}/comments", INVALID_ID))
                 .andExpect(status().isNotFound())
                 .andExpect(content().contentType(MediaType.valueOf("text/plain;charset=ISO-8859-1")))
-                .andExpect(content().string("The post not found by id:%d".formatted(INVALID_ID)));
+                .andExpect(content().string(messageSource.getMessage(MessageKey.POST_NOT_FOUND, new Object[]{INVALID_ID}, Locale.ENGLISH)));
     }
 
     @Test
@@ -120,7 +126,7 @@ class CommentRestControllerTest extends BaseIntegrationTest {
                         .contentType(MediaType.valueOf("application/json;charset=UTF-8"))
                         .content(objectMapper.writeValueAsString(givenDto)))
                 .andExpect(status().isNotFound())
-                .andExpect(content().string("The comment not found by id:%d".formatted(INVALID_ID)));
+                .andExpect(content().string(messageSource.getMessage(MessageKey.COMMENT_NOT_FOUND, new Object[]{INVALID_ID}, Locale.ENGLISH)));
     }
 
     @Test
@@ -131,7 +137,7 @@ class CommentRestControllerTest extends BaseIntegrationTest {
                         .contentType(MediaType.valueOf("application/json;charset=UTF-8"))
                         .content(objectMapper.writeValueAsString(givenDto)))
                 .andExpect(status().isNotFound())
-                .andExpect(content().string("The post not found by id:%d".formatted(INVALID_ID)));
+                .andExpect(content().string(messageSource.getMessage(MessageKey.POST_NOT_FOUND, new Object[]{INVALID_ID}, Locale.ENGLISH)));
     }
     @Test
     void updateComment_shouldPostIdMismatch400Fail() throws Exception {
@@ -178,7 +184,7 @@ class CommentRestControllerTest extends BaseIntegrationTest {
                         .contentType(MediaType.valueOf("application/json;charset=UTF-8"))
                         .content(objectMapper.writeValueAsString(givenDto)))
                 .andExpect(status().isNotFound())
-                .andExpect(content().string("The post not found by id:%d".formatted(INVALID_ID)));
+                .andExpect(content().string(messageSource.getMessage(MessageKey.POST_NOT_FOUND, new Object[]{INVALID_ID}, Locale.ENGLISH)));
     }
 
 
@@ -196,14 +202,14 @@ class CommentRestControllerTest extends BaseIntegrationTest {
     void delete_shouldDeleteCommentCommentNotFound404Fail() throws Exception {
         mockMvc.perform(delete("/api/posts/{postId}/comments/{commId}", VALID_ID, INVALID_ID))
                 .andExpect(status().isNotFound())
-                .andExpect(content().string("The comment not found by id:%d".formatted(INVALID_ID)));
+                .andExpect(content().string(messageSource.getMessage(MessageKey.COMMENT_NOT_FOUND, new Object[]{INVALID_ID}, Locale.ENGLISH)));
     }
 
     @Test
     void delete_shouldDeletePostNotFound404Fail() throws Exception {
         mockMvc.perform(delete("/api/posts/{postId}/comments/{commId}", INVALID_ID, VALID_ID))
                 .andExpect(status().isNotFound())
-                .andExpect(content().string("The post not found by id:%d".formatted(INVALID_ID)));
+                .andExpect(content().string(messageSource.getMessage(MessageKey.POST_NOT_FOUND, new Object[]{INVALID_ID}, Locale.ENGLISH)));
     }
 
 }

@@ -1,19 +1,27 @@
 package com.alex.blog.config;
 
+import com.alex.blog.mapper.CommentMapper;
 import com.alex.blog.mapper.PostMapper;
 import com.alex.blog.repository.CommentRepository;
 import com.alex.blog.repository.PostManagementRepository;
 import com.alex.blog.repository.PostSearchRepository;
+import com.alex.blog.service.CommentService;
 import com.alex.blog.service.FileService;
 import com.alex.blog.service.PostService;
+import com.alex.blog.service.impl.CommentServiceImpl;
 import com.alex.blog.service.impl.PostServiceImpl;
 import org.mockito.Mockito;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
+import org.springframework.context.annotation.Primary;
+import org.springframework.context.support.ResourceBundleMessageSource;
+import org.springframework.test.annotation.DirtiesContext;
 
 @Configuration
 public class TestServiceConfig {
-
 
     @Bean
     public PostManagementRepository postManagementRepository() {
@@ -36,8 +44,20 @@ public class TestServiceConfig {
     }
 
     @Bean
+    public CommentMapper commentMapper() {
+        return Mockito.mock(CommentMapper.class);
+    }
+
+    @Bean
     public FileService fileService() {
         return Mockito.mock(FileService.class);
+    }
+    @Bean
+    public MessageSource messageSource() {
+        ResourceBundleMessageSource messageSource = new ResourceBundleMessageSource();
+        messageSource.setBasename("messages-test");
+        messageSource.setDefaultEncoding("UTF-8");
+        return messageSource;
     }
 
     @Bean
@@ -47,7 +67,17 @@ public class TestServiceConfig {
                 postSearchRepository(),
                 postMapper(),
                 commentRepository(),
-                fileService());
+                fileService(),
+                messageSource());
+    }
+
+    @Bean
+    public CommentService commentService() {
+        return new CommentServiceImpl(
+                commentRepository(),
+                commentMapper(),
+                postManagementRepository(),
+                messageSource());
     }
 
 }

@@ -19,12 +19,11 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import java.util.List;
 
 @Configuration
-@Import({RestConfiguration.class})
+@Import({TestMessagesConfig.class,TestMapperConfig.class})
 @EnableWebMvc
 @ComponentScan(basePackages = {"com.alex.blog.api.rest.controller",
         "com.alex.blog.exception.handler",
-        "com.alex.blog.service",
-        "com.alex.blog.mapper"})
+        "com.alex.blog.service"})
 @PropertySource("classpath:application-test.properties")
 public class TestWebConfig {
 
@@ -38,6 +37,7 @@ public class TestWebConfig {
     public HttpMessageConverter<Object> httpMessageConverter() {
         return new MappingJackson2HttpMessageConverter();
     }
+
 
 
 }
