@@ -19,7 +19,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Locale;
-import java.util.Objects;
 import java.util.Optional;
 
 @Service
@@ -36,11 +35,11 @@ public class CommentServiceImpl implements CommentService {
     @Override
     public CommentReadDto findOneComment(Long postId, Long commentId) {
         if (!postManagementRepository.existsById(postId)) {
-            throw new EntityNotFoundException(messageSource.getMessage(MessageKey.POST_NOT_FOUND_KEY, new Object[]{postId}, Locale.ENGLISH));
+            throw new EntityNotFoundException(messageSource.getMessage(MessageKey.POST_NOT_FOUND, new Object[]{postId}, Locale.ENGLISH));
         }
         return commentRepository.findById(commentId)
                 .map(commentMapper::toCommentReadDto)
-                .orElseThrow(() -> new EntityNotFoundException(messageSource.getMessage(MessageKey.COMMENT_NOT_FOUND_KEY, new Object[]{commentId}, Locale.ENGLISH)));
+                .orElseThrow(() -> new EntityNotFoundException(messageSource.getMessage(MessageKey.COMMENT_NOT_FOUND, new Object[]{commentId}, Locale.ENGLISH)));
     }
 
     @Loggable
@@ -48,7 +47,7 @@ public class CommentServiceImpl implements CommentService {
     @Override
     public CommentReadDto saveComment(Long postId, CommentCreateDto commentCreateDto) {
         if (!postManagementRepository.existsById(postId)) {
-            throw new EntityNotFoundException(messageSource.getMessage(MessageKey.POST_NOT_FOUND_KEY, new Object[]{commentCreateDto.postId()}, Locale.ENGLISH));
+            throw new EntityNotFoundException(messageSource.getMessage(MessageKey.POST_NOT_FOUND, new Object[]{commentCreateDto.postId()}, Locale.ENGLISH));
 
         }
 
@@ -56,7 +55,7 @@ public class CommentServiceImpl implements CommentService {
                 .map(commentMapper::toComment)
                 .map(commentRepository::save)
                 .map(commentMapper::toCommentReadDto)
-                .orElseThrow(() -> new EntityCreationException(messageSource.getMessage(MessageKey.COMMENT_CREATION_EX_KEY, null, Locale.ENGLISH)));
+                .orElseThrow(() -> new EntityCreationException(messageSource.getMessage(MessageKey.COMMENT_CREATION_EX, null, Locale.ENGLISH)));
 
         postManagementRepository.incrementCommentsCount(commentReadDto.postId(), 1L);
 
@@ -69,7 +68,7 @@ public class CommentServiceImpl implements CommentService {
     public CommentReadDto updateComment(Long postId, Long commentId, CommentUpdateDto commentUpdateDto) {
 
         if (!postManagementRepository.existsById(postId)) {
-            throw new EntityNotFoundException(messageSource.getMessage(MessageKey.POST_NOT_FOUND_KEY, new Object[]{postId}, Locale.ENGLISH));
+            throw new EntityNotFoundException(messageSource.getMessage(MessageKey.POST_NOT_FOUND, new Object[]{postId}, Locale.ENGLISH));
         }
         Optional<Comment> maybeComment = Optional.ofNullable(commentId)
                 .flatMap(commentRepository::findById)
@@ -79,7 +78,7 @@ public class CommentServiceImpl implements CommentService {
                 });
 
         if (maybeComment.isEmpty()) {
-            throw new EntityNotFoundException(messageSource.getMessage(MessageKey.COMMENT_NOT_FOUND_KEY, new Object[]{commentId}, Locale.ENGLISH));
+            throw new EntityNotFoundException(messageSource.getMessage(MessageKey.COMMENT_NOT_FOUND, new Object[]{commentId}, Locale.ENGLISH));
         }
 
         Comment updatedComment = commentRepository.update(maybeComment.get());
@@ -93,12 +92,12 @@ public class CommentServiceImpl implements CommentService {
     @Override
     public void deleteComment(Long postId, Long commentId) {
         if (!postManagementRepository.existsById(postId)) {
-            throw new EntityNotFoundException(messageSource.getMessage(MessageKey.POST_NOT_FOUND_KEY, new Object[]{postId}, Locale.ENGLISH));
+            throw new EntityNotFoundException(messageSource.getMessage(MessageKey.POST_NOT_FOUND, new Object[]{postId}, Locale.ENGLISH));
         }
         Optional<Comment> maybeComment = commentRepository.findById(commentId);
 
         if (maybeComment.isEmpty()) {
-            throw new EntityNotFoundException(messageSource.getMessage(MessageKey.COMMENT_NOT_FOUND_KEY, new Object[]{commentId}, Locale.ENGLISH));
+            throw new EntityNotFoundException(messageSource.getMessage(MessageKey.COMMENT_NOT_FOUND, new Object[]{commentId}, Locale.ENGLISH));
         }
         commentRepository.delete(commentId);
         System.out.println(postManagementRepository.incrementCommentsCount(postId, -1L));
@@ -108,7 +107,7 @@ public class CommentServiceImpl implements CommentService {
     @Override
     public List<CommentReadDto> findCommentsByPostId(Long postId) {
         if (!postManagementRepository.existsById(postId)) {
-            throw new EntityNotFoundException(messageSource.getMessage(MessageKey.POST_NOT_FOUND_KEY, new Object[]{postId}, Locale.ENGLISH));
+            throw new EntityNotFoundException(messageSource.getMessage(MessageKey.POST_NOT_FOUND, new Object[]{postId}, Locale.ENGLISH));
         }
         return commentRepository.findCommentsByPostId(postId).stream()
                 .map(commentMapper::toCommentReadDto).toList();
