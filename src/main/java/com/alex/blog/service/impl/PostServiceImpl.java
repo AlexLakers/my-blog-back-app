@@ -3,9 +3,7 @@ package com.alex.blog.service.impl;
 import com.alex.blog.api.dto.PostCreateDto;
 import com.alex.blog.api.dto.PostReadDto;
 import com.alex.blog.api.dto.PostUpdateDto;
-import com.alex.blog.exception.EntityCreationException;
-import com.alex.blog.exception.EntityNotFoundException;
-import com.alex.blog.exception.TitleAlreadyExistsException;
+import com.alex.blog.exception.*;
 import com.alex.blog.mapper.PostMapper;
 import com.alex.blog.model.Post;
 import com.alex.blog.repository.CommentRepository;
@@ -23,18 +21,16 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.InputStream;
 import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
 public class PostServiceImpl implements PostService {
-
     private final PostManagementRepository postManagementRepository;
     private final PostSearchRepository postSearchRepository;
     private final PostMapper postMapper;
@@ -44,6 +40,7 @@ public class PostServiceImpl implements PostService {
 
 
     @Override
+    @Transactional(readOnly = true)
     public PostReadDto findOnePost(Long postId) {
         return postSearchRepository.findPostById(postId)
                 .map(postMapper::toPostReadDto)
@@ -51,6 +48,7 @@ public class PostServiceImpl implements PostService {
 
     }
 
+    @Transactional
     @Override
     public Long incrementLikesCount(Long postId) {
         if (!postManagementRepository.existsById(postId)) {
@@ -61,6 +59,7 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public PostPageDto findPageByCriteria(SearchDto searchDto) {
         Map<Boolean, List<String>> tokens = Arrays.stream(searchDto.search().split(" "))
                 .filter(Predicate.not(String::isEmpty))
@@ -75,7 +74,7 @@ public class PostServiceImpl implements PostService {
                 .collect(Collectors.joining(" "));
 
 
-        Pageable pageable = PageRequest.of(searchDto.pageNumber()-1, searchDto.pageSize());
+        Pageable pageable = PageRequest.of(searchDto.pageNumber() - 1, searchDto.pageSize());
         Criteria criteria = new Criteria(title, tags);
         Page<Post> page = postSearchRepository.findPostsByCriteriaAndPageable(criteria, pageable);
 
@@ -95,52 +94,96 @@ public class PostServiceImpl implements PostService {
         return text.substring(0, length).concat("...");
     }
 
-    @Transactional
     @Override
+    @Transactional
     public PostReadDto updatePost(Long postId, PostUpdateDto postUpdateDto) {
 
-        return postSearchRepository.findPostById(postId)
+        Post copiedPost = postSearchRepository.findPostById(postId)
                 .map(post -> {
-                            postMapper.updatePost(postUpdateDto, post);
-                            return postManagementRepository.update(post);
-                        }
-                )
-                .map(postMapper::toPostReadDto)
-                .orElseThrow(() -> new EntityNotFoundException("The post with id:%1$d not found"
+                    postMapper.updatePost(postUpdateDto, post);
+                    System.out.println(post);
+                    return post;
+                }).orElseThrow(() -> new EntityNotFoundException("The post not found by id:%d"
                         .formatted(postId)));
+
+        var p=postMapper.toPostReadDto(postManagementRepository.update(copiedPost));
+        System.out.println("UPDATED"+p);
+                return p;
     }
-@Transactional
+
+    @Transactional
     public void deletePost(Long postId) {
         if (!postManagementRepository.existsById(postId)) {
-            throw new EntityNotFoundException("The post with id:%1$d not found"
+            throw new EntityNotFoundException("The post not found by id:%d"
                     .formatted(postId));
         }
         postManagementRepository.delete(postId);
         commentRepository.deleteByPostId(postId);
-
     }
 
     @Override
     public byte[] getImage(Long postId) {
-        String imagePath = postManagementRepository.getImagePath(postId);
-        return fileService.getFile(imagePath).orElseThrow();
+        if (!postManagementRepository.existsById(postId)) {
+            throw new EntityNotFoundException("The post not found by id:%d"
+                    .formatted(postId));
+        }
+
+        return postManagementRepository.getImagePath(postId)
+                .filter(path -> !path.isEmpty())
+                .flatMap(fileService::getFile)
+                .orElseThrow(() -> new ImageNotFoundException("The image path or image not found for post with id:%d".formatted(postId)));
     }
 
     @SneakyThrows
     @Override
+    @Transactional
     public void updateImage(long postId, MultipartFile file) {
-        InputStream is = file.getInputStream();
-        String imageName = postId + "/" + UUID.randomUUID()+(Objects.requireNonNull(file.getOriginalFilename()));
+        if (!postManagementRepository.existsById(postId)) {
+            throw new EntityNotFoundException("The post with id:%1$d not found"
+                    .formatted(postId));
+        }
 
-        postManagementRepository.updateImagePath(postId, imageName);
-        fileService.saveFile(is, imageName);
+        /*Optional<String> maybeOleName=postManagementRepository.getImagePath(postId)
+                .filter(path -> !path.isEmpty());*/
+
+        deleteOldImageIfExists(postId);
+
+        String newImagePath = generateNewImagePath(postId, file.getOriginalFilename());
+
+        fileService.saveFile(file, newImagePath);
+        postManagementRepository.updateImagePath(postId, newImagePath);
+
+/*        maybeOleName.ifPresent(fileService::deleteFile);*/
+
+
+    }
+
+
+    private String generateNewImagePath(Long postId, String imageName) {
+        String type = getTypeFromFileName(imageName);
+        return "post_%1$d/".formatted(postId) + UUID.randomUUID() + type;
+
+
+    }
+
+    private void deleteOldImageIfExists(Long postId) {
+        postManagementRepository.getImagePath(postId)
+                .filter(path -> !path.isEmpty())
+                .ifPresent(fileService::deleteFile);
+    }
+
+    private String getTypeFromFileName(String fileName) {
+        return Optional.ofNullable(fileName)
+                .filter(name -> name.contains("."))
+                .map(name -> name.substring(name.lastIndexOf(".")))
+                .orElse("");
     }
 
     @Transactional
     @Override
     public PostReadDto savePost(PostCreateDto postCreateDto) {
         if (postManagementRepository.existsByTitle(postCreateDto.title())) {
-            throw new TitleAlreadyExistsException("The title: %s already exists".formatted(postCreateDto.title()));
+                throw new TitleAlreadyExistsException("The title: %s already exists".formatted(postCreateDto.title()));
         }
 
         return Optional.ofNullable(postCreateDto)

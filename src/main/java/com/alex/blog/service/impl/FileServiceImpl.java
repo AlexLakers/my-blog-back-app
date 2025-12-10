@@ -3,9 +3,12 @@ package com.alex.blog.service.impl;
 import com.alex.blog.service.FileService;
 import lombok.SneakyThrows;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.client.MultipartBodyBuilder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.swing.text.html.Option;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -16,31 +19,50 @@ import java.util.Optional;
 @Service
 public class FileServiceImpl implements FileService {
 
-   @Value("${blog.image.base.dir:/home/my-blog/}")
+    @Value("${blog.image.base.dir:/home/my-blog/}")
     private String baseDir;
 
 
-    @SneakyThrows
     @Override
-    public void saveFile(InputStream content, String fileName) {
-        Path fullPath = Path.of(baseDir, fileName);
-        Files.createDirectories(fullPath.getParent());
-        Files.copy(content, fullPath, StandardCopyOption.REPLACE_EXISTING);
-    }
+    @SneakyThrows
+    @Transactional
+    public void saveFile(MultipartFile file, String fileName) {
 
+        Path fullPath = Path.of(baseDir, fileName);
+
+        Files.createDirectories(fullPath.getParent());
+        file.transferTo(fullPath.toFile());
+
+
+    }
 
 
     @SneakyThrows
     @Override
     public Optional<byte[]> getFile(String fileName) {
-        Path fullPath = Path.of(baseDir, fileName);
-        return Optional.of(fullPath)
-                .filter(Files::exists)
-                .filter(Files::isRegularFile)
+
+        return buildAndCheckPath(fileName)
                 .flatMap(this::readAllBytesSafe);
+    }
+
+    @SneakyThrows
+    @Override
+    public void deleteFile(String fileName) {
+
+        Optional<Path> maybePath = buildAndCheckPath(fileName);
+        if (buildAndCheckPath(fileName).isPresent()) {
+            Files.deleteIfExists(maybePath.get());
+        }
 
     }
 
+    private Optional<Path> buildAndCheckPath(String fileName) {
+        return Optional.ofNullable(fileName)
+                .filter(file -> !file.isEmpty())
+                .map(file -> Path.of(baseDir, file))
+                .filter(Files::exists)
+                .filter(Files::isRegularFile);
+    }
 
     private Optional<byte[]> readAllBytesSafe(Path path) {
         try {

@@ -1,9 +1,6 @@
 package com.alex.blog.model;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import lombok.experimental.FieldNameConstants;
 
 @NoArgsConstructor
@@ -11,6 +8,7 @@ import lombok.experimental.FieldNameConstants;
 @Getter
 @Setter
 @FieldNameConstants
+@EqualsAndHashCode
 public class Comment {
     private Long id;
     private String text;

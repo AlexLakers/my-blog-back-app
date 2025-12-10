@@ -9,6 +9,7 @@ import com.alex.blog.service.PostService;
 import jdk.jfr.ContentType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.Resource;
+import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -48,8 +49,8 @@ public class PostRestController {
     }
 
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<PostPageDto> search(@Validated SearchDto searchDto
-                                                /*@RequestParam("search") String search,
+    public ResponseEntity<PostPageDto> search(@ModelAttribute @Validated SearchDto searchDto
+                                               /* @RequestParam("search") String search,
                                               @RequestParam("pageNumber") int pageNumber,
                                               @RequestParam("pageSize") int pageSize*/) {
 
@@ -61,7 +62,8 @@ public class PostRestController {
 
     @PutMapping(value = "/{postId}/image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Void> updateImage(@PathVariable("postId") Long postId,
-                                            @RequestParam("image") MultipartFile image) {
+                                            @RequestParam(value = "image") MultipartFile image) {
+
         postService.updateImage(postId, image);
         return ResponseEntity.ok().build();
 
@@ -69,12 +71,11 @@ public class PostRestController {
 
     @GetMapping(value = "/{postId}/image")
     public ResponseEntity<byte[]> getImage(@PathVariable("postId") Long postId) {
-        System.out.println("dsadsadasas");
+        System.out.println(postId);
         byte[] image = postService.getImage(postId);
-
-        return ResponseEntity.status(HttpStatus.OK)
-                .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                .body(image);
+        return /*image.length > 0*/
+              ResponseEntity.status(HttpStatus.OK).contentType(MediaType.IMAGE_JPEG).cacheControl(CacheControl.noStore()).body(image);
+               /* : ResponseEntity.status(HttpStatus.BAD_REQUEST).build();*/
     }
 
     @PostMapping(path = "/{postId}/likes")

@@ -12,6 +12,7 @@ import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.swing.text.html.Option;
 import java.util.*;
 
 @Repository
@@ -39,11 +40,11 @@ public class JdbcNativePostManagementRepositoryImpl implements PostManagementRep
     }
 
     @Override
-    public String getImagePath(Long postId) {
+    public Optional<String> getImagePath(Long postId) {
         String sqlSelect = """
                 SELECT image_path FROM posts WHERE id = ?
                 """;
-        return jdbcTemplate.queryForObject(sqlSelect, String.class, postId);
+        return Optional.ofNullable(jdbcTemplate.queryForObject(sqlSelect, String.class, postId));
 
     }
 

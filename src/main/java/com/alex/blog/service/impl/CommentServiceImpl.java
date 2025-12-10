@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 @Service
@@ -28,36 +29,40 @@ public class CommentServiceImpl implements CommentService {
 
     @Override
     public CommentReadDto findOneComment(Long postId, Long commentId) {
-
+        if (!postManagementRepository.existsById(postId)) {
+            throw new EntityNotFoundException("The post not found by id:%d"
+                    .formatted(postId));
+        }
         return commentRepository.findById(commentId)
                 .map(commentMapper::toCommentReadDto)
-                .orElseThrow(() -> new EntityNotFoundException("The comment with id: %d not found"
+                .orElseThrow(() -> new EntityNotFoundException("The comment not found by id:%d"
                         .formatted(commentId)));
     }
 
     @Transactional
     @Override
     public CommentReadDto saveComment(Long postId, CommentCreateDto commentCreateDto) {
-
         if (!postManagementRepository.existsById(postId)) {
-            throw new EntityNotFoundException("The post with id: %d not found"
+            throw new EntityNotFoundException("The post not found by id:%d"
                     .formatted(commentCreateDto.postId()));
         }
-       CommentReadDto commentReadDto=Optional.ofNullable(commentCreateDto)
+        CommentReadDto commentReadDto = Optional.ofNullable(commentCreateDto)
                 .map(commentMapper::toComment)
                 .map(commentRepository::save)
                 .map(commentMapper::toCommentReadDto)
-               .orElseThrow(()-> new EntityCreationException("An error has been detected during creating"));
+                .orElseThrow(() -> new EntityCreationException("An error has been detected during creating"));
 
-        postManagementRepository.incrementCommentsCount(commentReadDto.postId(),1L);
+        postManagementRepository.incrementCommentsCount(commentReadDto.postId(), 1L);
 
         return commentReadDto;
     }
+
     @Transactional
     @Override
     public CommentReadDto updateComment(Long postId, Long commentId, CommentUpdateDto commentUpdateDto) {
+
         if (!postManagementRepository.existsById(postId)) {
-            throw new EntityNotFoundException("The post with id: %d not exists".formatted(postId));
+            throw new EntityNotFoundException("The post not found by id:%d".formatted(postId));
         }
         Optional<Comment> maybeComment = Optional.ofNullable(commentId)
                 .flatMap(commentRepository::findById)
@@ -66,9 +71,8 @@ public class CommentServiceImpl implements CommentService {
                     return comm;
                 });
 
-
         if (maybeComment.isEmpty()) {
-            throw new EntityNotFoundException("The comment with id: %d not found".formatted(commentId));
+            throw new EntityNotFoundException("The comment not found by id:%d".formatted(commentId));
         }
 
         Comment updatedComment = commentRepository.update(maybeComment.get());
@@ -76,19 +80,20 @@ public class CommentServiceImpl implements CommentService {
         return commentMapper.toCommentReadDto(updatedComment);
 
     }
+
     @Transactional
     @Override
     public void deleteComment(Long postId, Long commentId) {
         if (!postManagementRepository.existsById(postId)) {
-            throw new EntityNotFoundException("The post with id: %d not exists".formatted(postId));
+            throw new EntityNotFoundException("The post not found by id:%d".formatted(postId));
         }
         Optional<Comment> maybeComment = commentRepository.findById(commentId);
 
         if (maybeComment.isEmpty()) {
-            throw new EntityNotFoundException("The comment with id: %d not found".formatted(commentId));
+            throw new EntityNotFoundException("The comment not found by id:%d".formatted(commentId));
         }
         commentRepository.delete(commentId);
-        System.out.println(postManagementRepository.incrementCommentsCount(postId,-1L));
+        System.out.println(postManagementRepository.incrementCommentsCount(postId, -1L));
 
     }
 
