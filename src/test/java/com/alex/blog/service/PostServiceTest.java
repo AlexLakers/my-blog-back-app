@@ -21,6 +21,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Optional;
@@ -200,6 +202,15 @@ class PostServiceTest {
     }
 
     @Test
-    void updateImage() {
+    void updateImage_shouldCallSaveFileAndUpdateImagePathSuccess() {
+        MultipartFile image =new MockMultipartFile("image",new byte[]{1, 2, 3, 4});
+        Mockito.when(postManagementRepository.existsById(VALID_ID)).thenReturn(true);
+        Mockito.doNothing().when(fileService).saveFile(Mockito.any(MultipartFile.class),Mockito.anyString());
+        Mockito.doNothing().when(postManagementRepository).updateImagePath(Mockito.anyLong(),Mockito.anyString());
+
+        postService.updateImage(VALID_ID,image);
+
+        Mockito.verify(fileService,Mockito.times(1)).saveFile(Mockito.any(MultipartFile.class),Mockito.anyString());
+        Mockito.verify(postManagementRepository,Mockito.times(1)).updateImagePath(Mockito.anyLong(),Mockito.anyString());
     }
 }
