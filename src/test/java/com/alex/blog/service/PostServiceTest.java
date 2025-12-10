@@ -3,6 +3,7 @@ package com.alex.blog.service;
 import com.alex.blog.api.dto.PostCreateDto;
 import com.alex.blog.api.dto.PostReadDto;
 import com.alex.blog.api.dto.PostUpdateDto;
+import com.alex.blog.config.TestUnitConfig;
 import com.alex.blog.exception.EntityNotFoundException;
 import com.alex.blog.exception.TitleAlreadyExistsException;
 import com.alex.blog.mapper.CommentMapper;
@@ -15,35 +16,47 @@ import com.alex.blog.service.impl.CommentServiceImpl;
 import com.alex.blog.service.impl.FileServiceImpl;
 import com.alex.blog.service.impl.PostServiceImpl;
 import org.assertj.core.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Optional;
 
+import static org.mockito.Mockito.reset;
 
-@ExtendWith(MockitoExtension.class)
+
+@ExtendWith(SpringExtension.class)
+@ContextConfiguration(classes = TestUnitConfig.class)
 class PostServiceTest {
 
-    @Mock
+    @Autowired
     private PostManagementRepository postManagementRepository;
-    @Mock
+    @Autowired
     private PostSearchRepository postSearchRepository;
-    @Mock
+    @Autowired
     private PostMapper postMapper;
-    @Mock
+    @Autowired
     private FileService fileService;
-    @Mock
+    @Autowired
     CommentRepository commentRepository;
-
-    @InjectMocks
+    @Autowired
     private PostServiceImpl postService;
+
+    @BeforeEach
+    void resetMocks() {
+        reset(postManagementRepository,commentRepository,postSearchRepository,postMapper,fileService);
+    }
+
 
     private final static Long VALID_ID = 1L;
     private final static Long INVALID_ID = 10000L;
