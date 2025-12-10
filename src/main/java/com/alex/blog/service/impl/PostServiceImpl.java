@@ -124,7 +124,7 @@ public class PostServiceImpl implements PostService {
     @Override
     public byte[] getImage(Long postId) {
         if (!postManagementRepository.existsById(postId)) {
-            throw new EntityNotFoundException("The post with id:%1$d not found"
+            throw new EntityNotFoundException("The post not found by id:%d"
                     .formatted(postId));
         }
 
@@ -143,16 +143,17 @@ public class PostServiceImpl implements PostService {
                     .formatted(postId));
         }
 
-        Optional<String> maybeOleName=postManagementRepository.getImagePath(postId)
-                .filter(path -> !path.isEmpty());
+        /*Optional<String> maybeOleName=postManagementRepository.getImagePath(postId)
+                .filter(path -> !path.isEmpty());*/
 
+        deleteOldImageIfExists(postId);
 
         String newImagePath = generateNewImagePath(postId, file.getOriginalFilename());
 
         fileService.saveFile(file, newImagePath);
         postManagementRepository.updateImagePath(postId, newImagePath);
 
-        maybeOleName.ifPresent(fileService::deleteFile);
+/*        maybeOleName.ifPresent(fileService::deleteFile);*/
 
 
     }
@@ -182,7 +183,7 @@ public class PostServiceImpl implements PostService {
     @Override
     public PostReadDto savePost(PostCreateDto postCreateDto) {
         if (postManagementRepository.existsByTitle(postCreateDto.title())) {
-            throw new TitleAlreadyExistsException("The title: %s already exists".formatted(postCreateDto.title()));
+                throw new TitleAlreadyExistsException("The title: %s already exists".formatted(postCreateDto.title()));
         }
 
         return Optional.ofNullable(postCreateDto)

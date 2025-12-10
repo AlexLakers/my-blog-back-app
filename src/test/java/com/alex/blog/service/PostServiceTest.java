@@ -3,26 +3,20 @@ package com.alex.blog.service;
 import com.alex.blog.api.dto.PostCreateDto;
 import com.alex.blog.api.dto.PostReadDto;
 import com.alex.blog.api.dto.PostUpdateDto;
-import com.alex.blog.config.TestUnitConfig;
+import com.alex.blog.config.TestServiceConfig;
 import com.alex.blog.exception.EntityNotFoundException;
 import com.alex.blog.exception.TitleAlreadyExistsException;
-import com.alex.blog.mapper.CommentMapper;
 import com.alex.blog.mapper.PostMapper;
 import com.alex.blog.model.Post;
 import com.alex.blog.repository.CommentRepository;
 import com.alex.blog.repository.PostManagementRepository;
 import com.alex.blog.repository.PostSearchRepository;
-import com.alex.blog.service.impl.CommentServiceImpl;
-import com.alex.blog.service.impl.FileServiceImpl;
 import com.alex.blog.service.impl.PostServiceImpl;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.ContextConfiguration;
@@ -36,7 +30,7 @@ import static org.mockito.Mockito.reset;
 
 
 @ExtendWith(SpringExtension.class)
-@ContextConfiguration(classes = TestUnitConfig.class)
+@ContextConfiguration(classes = TestServiceConfig.class)
 class PostServiceTest {
 
     @Autowired

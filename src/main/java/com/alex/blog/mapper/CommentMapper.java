@@ -16,7 +16,6 @@ public interface CommentMapper {
 
     CommentReadDto toCommentReadDto(Comment comment);
     Comment toComment(CommentCreateDto commentCreateDto);
-    List<CommentReadDto> toCommentReadDtoList (List<Comment> comments);
     @BeanMapping(nullValuePropertyMappingStrategy = IGNORE)
-    Comment updateComment (CommentUpdateDto commentUpdateDto,@MappingTarget Comment comment);
+    void updateComment (CommentUpdateDto commentUpdateDto,@MappingTarget Comment comment);
 }

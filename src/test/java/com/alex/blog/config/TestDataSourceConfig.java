@@ -1,4 +1,4 @@
-package config;
+package com.alex.blog.config;
 
 import lombok.SneakyThrows;
 import org.springframework.beans.factory.annotation.Value;

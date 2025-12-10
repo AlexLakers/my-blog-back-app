@@ -38,8 +38,7 @@ class CommentServiceTest {
 
     private final static Long VALID_ID = 1L;
     private final static Long INVALID_ID = 10000L;
-    private final Comment comment = new Comment(VALID_ID, "test comment", VALID_ID);
-    private final CommentReadDto commentReadDto = new CommentReadDto(VALID_ID, "text comment", VALID_ID);
+    private final static Comment comment = new Comment(VALID_ID, "test comment", VALID_ID);
 
 
     @Test

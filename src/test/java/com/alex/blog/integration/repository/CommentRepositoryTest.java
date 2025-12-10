@@ -1,7 +1,8 @@
-package com.alex.blog.repository;
+package com.alex.blog.integration.repository;
 
 import com.alex.blog.model.Comment;
-import com.alex.blog.BaseIntegrationTest;
+import com.alex.blog.config.BaseIntegrationTest;
+import com.alex.blog.repository.CommentRepository;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,7 +12,7 @@ import java.util.List;
 import java.util.Optional;
 
 
-class CommentRepositoryIT extends BaseIntegrationTest {
+class CommentRepositoryTest extends BaseIntegrationTest {
 
     private static final Comment comment = new Comment(1L, "test comment1", 1L);
     private final static Long VALID_ID=1L;

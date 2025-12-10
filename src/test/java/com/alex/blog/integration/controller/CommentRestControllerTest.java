@@ -1,10 +1,10 @@
-package com.alex.blog.api.rest.controller;
+package com.alex.blog.integration.controller;
 
 import com.alex.blog.api.dto.CommentCreateDto;
 import com.alex.blog.api.dto.CommentUpdateDto;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.alex.blog.BaseIntegrationTest;
-import config.TestWebConfig;
+import com.alex.blog.config.BaseIntegrationTest;
+import com.alex.blog.config.TestWebConfig;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -31,7 +31,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration(classes = TestWebConfig.class)
 @WebAppConfiguration
-class CommentRestControllerIT extends BaseIntegrationTest {
+class CommentRestControllerTest extends BaseIntegrationTest {
 
     @Autowired
     private WebApplicationContext webApplicationContext;
@@ -100,7 +100,6 @@ class CommentRestControllerIT extends BaseIntegrationTest {
     }
 
     @Test
-    @Transactional
     void updateComment_shouldReturnUpdatedCommentJsonSuccess() throws Exception {
         CommentUpdateDto givenDto = new CommentUpdateDto(VALID_ID, "Updated test comment1", VALID_ID);
 
@@ -184,7 +183,6 @@ class CommentRestControllerIT extends BaseIntegrationTest {
 
 
     @Test
-    @Transactional
     void delete_shouldDeleteCommentSuccess() throws Exception {
         mockMvc.perform(delete("/api/posts/{postId}/comments/{commId}", VALID_ID, VALID_ID))
                 .andExpect(status().isOk());

@@ -1,8 +1,8 @@
-package com.alex.blog.repository;
+package com.alex.blog.integration.repository;
 
-import com.alex.blog.model.Comment;
 import com.alex.blog.model.Post;
-import com.alex.blog.BaseIntegrationTest;
+import com.alex.blog.config.BaseIntegrationTest;
+import com.alex.blog.repository.PostManagementRepository;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.Optional;
 
 
-class PostManagementRepositoryIT extends BaseIntegrationTest {
+class PostManagementRepositoryTest extends BaseIntegrationTest {
 
     @Autowired
     private PostManagementRepository postManagementRepository;

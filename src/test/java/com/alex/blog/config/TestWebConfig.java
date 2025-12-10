@@ -1,4 +1,4 @@
-package config;
+package com.alex.blog.config;
 
 import com.alex.blog.api.rest.controller.CommentRestController;
 import com.alex.blog.api.rest.controller.PostRestController;
