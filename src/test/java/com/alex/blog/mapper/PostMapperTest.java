@@ -22,7 +22,11 @@ import static org.mockito.Mockito.reset;
 @ContextConfiguration(classes = TestMapperConfig.class)
 @ExtendWith(SpringExtension.class)
 class PostMapperTest {
-    private final static Post post = new Post(null, "test title1", "test desc1", List.of("test_tag1"), null, 0L, 0L);
+    private Post post;
+    @BeforeEach
+    void setUp() {
+        post=new Post(null, "test title1", "test desc1", List.of("test_tag1"), null, 0L, 0L);;
+    }
     @Autowired
     public PostMapper postMapper;
 
