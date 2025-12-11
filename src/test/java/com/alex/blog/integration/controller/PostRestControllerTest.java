@@ -4,23 +4,23 @@ import com.alex.blog.api.dto.PostCreateDto;
 import com.alex.blog.api.dto.PostReadDto;
 import com.alex.blog.api.dto.PostUpdateDto;
 import com.alex.blog.config.TestWebConfig;
+import com.alex.blog.service.MessageKey;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.alex.blog.config.BaseIntegrationTest;
+import com.alex.blog.integration.BaseIntegrationTest;
 import lombok.SneakyThrows;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -30,6 +30,7 @@ import org.springframework.web.filter.CharacterEncodingFilter;
 //org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.stream.Stream;
 
 import static org.hamcrest.Matchers.*;
@@ -39,7 +40,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 
-@ExtendWith(SpringExtension.class)
 @ContextConfiguration(classes = TestWebConfig.class)
 @WebAppConfiguration
 class PostRestControllerTest extends BaseIntegrationTest {
@@ -53,6 +53,8 @@ class PostRestControllerTest extends BaseIntegrationTest {
     private ObjectMapper objectMapper;
     @Autowired
     private JdbcTemplate jdbcTemplate;
+    @Autowired
+    private MessageSource messageSource;;
 
     private MockMvc mockMvc;
 
@@ -74,7 +76,7 @@ class PostRestControllerTest extends BaseIntegrationTest {
 
         mockMvc.perform(get("/api/posts/{postId}", VALID_ID))
                 .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
+                .andExpect(content().contentType(MediaType.valueOf("application/json;charset=UTF-8")))
                 .andExpect(jsonPath("$.title").value(expectedPost.title()))
                 .andExpect(jsonPath("$.id").value(expectedPost.id()))
                 .andExpect(jsonPath("$.tags", hasSize(1)))
@@ -87,7 +89,7 @@ class PostRestControllerTest extends BaseIntegrationTest {
 
         mockMvc.perform(get("/api/posts/{postId}", INVALID_ID))
                 .andExpect(status().isNotFound())
-                .andExpect(content().string("The post not found by id:%d".formatted(INVALID_ID)));
+                .andExpect(content().string(messageSource.getMessage(MessageKey.POST_NOT_FOUND, new Object[]{INVALID_ID}, Locale.ENGLISH)));
     }
 
 
@@ -115,7 +117,7 @@ class PostRestControllerTest extends BaseIntegrationTest {
                         .accept(MediaType.valueOf("application/json;charset=UTF-8")))
                 .andExpect(status().isBadRequest())
                 .andExpect(content().contentType(MediaType.valueOf("application/json;charset=UTF-8")))
-                .andExpect(content().string("The title: %s already exists".formatted(givenDto.title())));
+                .andExpect(content().string(messageSource.getMessage(MessageKey.POST_TITLE_EXISTS_EX, new Object[]{givenDto.title()},Locale.ENGLISH)));
     }
 
 
@@ -144,7 +146,7 @@ class PostRestControllerTest extends BaseIntegrationTest {
                         .contentType(MediaType.valueOf("application/json;charset=UTF-8"))
                         .content(objectMapper.writeValueAsString(givenDto)))
                 .andExpect(status().isNotFound())
-                .andExpect(content().string("The post not found by id:%d".formatted(INVALID_ID)));
+                .andExpect(content().string(messageSource.getMessage(MessageKey.POST_NOT_FOUND, new Object[]{INVALID_ID},Locale.ENGLISH)));
     }
 
 
@@ -186,7 +188,7 @@ class PostRestControllerTest extends BaseIntegrationTest {
     void updateImage_ShouldImageNotFound404() throws Exception {
         mockMvc.perform(get("/api/posts/{id}/image", VALID_ID))
                 .andExpect(status().isNotFound())
-                .andExpect(content().string("The image path or image not found for post with id:%d".formatted(VALID_ID)));
+                .andExpect(content().string(messageSource.getMessage(MessageKey.IMAGE_NOT_FOUND_EX, new Object[]{VALID_ID},Locale.ENGLISH)));
     }
 
     @Test
@@ -195,7 +197,7 @@ class PostRestControllerTest extends BaseIntegrationTest {
 
         mockMvc.perform(get("/api/posts/{id}/image", INVALID_ID))
                 .andExpect(status().isNotFound())
-                .andExpect(content().string("The post not found by id:%1$d".formatted(INVALID_ID)));
+                .andExpect(content().string(messageSource.getMessage(MessageKey.POST_NOT_FOUND, new Object[]{INVALID_ID},Locale.ENGLISH)));
     }
 
 
@@ -240,7 +242,7 @@ class PostRestControllerTest extends BaseIntegrationTest {
     void deletePostWithComments_shouldPostNotFound404Fail() throws Exception {
         mockMvc.perform(delete("/api/posts/{postId}", INVALID_ID))
                 .andExpect(status().isNotFound())
-                .andExpect(content().string("The post not found by id:%d".formatted(INVALID_ID)));
+                .andExpect(content().string(messageSource.getMessage(MessageKey.POST_NOT_FOUND, new Object[]{INVALID_ID},Locale.ENGLISH)));
     }
 
 }

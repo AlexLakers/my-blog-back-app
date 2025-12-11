@@ -6,7 +6,6 @@ import jakarta.validation.constraints.NotNull;
 import java.util.List;
 
 public record PostUpdateDto(Long id,
-
                             @NotBlank(message = "The title should be not blank ")
                             String title,
 

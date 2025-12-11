@@ -53,7 +53,6 @@ public class JdbcNativePostSearchImpl implements PostSearchRepository {
         System.out.println(postsWithoutTags);
 
         List<Post> posts = fetchTags(postsWithoutTags);
-       // System.out.println(posts);
         return new PageImpl<>(posts, PageRequest.of(pageable.getPageNumber(), pageable.getPageSize()), countElements);
     }
 

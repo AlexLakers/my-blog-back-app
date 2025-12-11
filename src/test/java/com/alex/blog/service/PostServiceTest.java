@@ -18,12 +18,14 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 
 import static org.mockito.Mockito.reset;
@@ -44,7 +46,9 @@ class PostServiceTest {
     @Autowired
     CommentRepository commentRepository;
     @Autowired
-    private PostServiceImpl postService;
+    private MessageSource messageSource;
+    @Autowired
+    private PostService postService;
 
     @BeforeEach
     void resetMocks() {
@@ -73,7 +77,7 @@ class PostServiceTest {
 
         Assertions.assertThatExceptionOfType(EntityNotFoundException.class)
                 .isThrownBy(() -> postService.findOnePost(INVALID_ID))
-                .withMessage("The post not found by id:%d".formatted(INVALID_ID));
+                .withMessage(messageSource.getMessage(MessageKey.POST_NOT_FOUND, new Object[]{INVALID_ID}, Locale.ENGLISH));
     }
 
 
@@ -94,7 +98,7 @@ class PostServiceTest {
 
         Assertions.assertThatExceptionOfType(EntityNotFoundException.class)
                 .isThrownBy(() -> postService.incrementLikesCount(INVALID_ID))
-                .withMessage("The post not found by id:%d".formatted(INVALID_ID));
+                .withMessage(messageSource.getMessage(MessageKey.POST_NOT_FOUND, new Object[]{INVALID_ID}, Locale.ENGLISH));
     }
 
     @Test
@@ -121,7 +125,7 @@ class PostServiceTest {
 
         Assertions.assertThatExceptionOfType(EntityNotFoundException.class)
                 .isThrownBy(() -> postService.updatePost(INVALID_ID, givenDto))
-                .withMessage("The post not found by id:%d".formatted(INVALID_ID));
+                .withMessage(messageSource.getMessage(MessageKey.POST_NOT_FOUND, new Object[]{INVALID_ID}, Locale.ENGLISH));
 
     }
 
@@ -151,7 +155,7 @@ class PostServiceTest {
 
         Assertions.assertThatExceptionOfType(TitleAlreadyExistsException.class)
                 .isThrownBy(() -> postService.savePost(givenDto))
-                .withMessage("The title: %s already exists".formatted(givenDto.title()));
+                .withMessage(messageSource.getMessage(MessageKey.POST_TITLE_EXISTS_EX, new Object[]{givenDto.title()}, Locale.ENGLISH));
 
         Mockito.verify(postManagementRepository, Mockito.times(0)).save(post);
         Mockito.verify(postMapper, Mockito.times(0)).toPostReadDto(post);
@@ -177,7 +181,7 @@ class PostServiceTest {
 
         Assertions.assertThatExceptionOfType(EntityNotFoundException.class)
                 .isThrownBy(() -> postService.deletePost(INVALID_ID))
-                .withMessage("The post not found by id:%d".formatted(INVALID_ID));
+                .withMessage(messageSource.getMessage(MessageKey.POST_NOT_FOUND, new Object[]{INVALID_ID}, Locale.ENGLISH));
 
         Mockito.verify(postManagementRepository, Mockito.times(0)).delete(INVALID_ID);
         Mockito.verify(commentRepository, Mockito.times(0)).deleteByPostId(INVALID_ID);
@@ -202,7 +206,7 @@ class PostServiceTest {
 
         Assertions.assertThatExceptionOfType(EntityNotFoundException.class)
                 .isThrownBy(() -> postService.getImage(INVALID_ID))
-                .withMessage("The post not found by id:%d".formatted(INVALID_ID));
+                .withMessage(messageSource.getMessage(MessageKey.POST_NOT_FOUND, new Object[]{INVALID_ID}, Locale.ENGLISH));
 
         Mockito.verify(postManagementRepository, Mockito.times(0)).getImagePath(INVALID_ID);
         Mockito.verify(fileService, Mockito.times(0)).getFile(post.getImagePath());

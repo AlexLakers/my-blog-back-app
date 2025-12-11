@@ -14,9 +14,6 @@ public class MultipartConfiguration {
     @Bean
     public MultipartResolver multipartResolver() {
         StandardServletMultipartResolver resolver = new StandardServletMultipartResolver();
-        //resolversetMaxUploadSize(10 * 1024 * 1024); // 10MB
-       // resolver.setMaxUploadSizePerFile(10 * 1024 * 1024); // 10MB
-       // resolver.setDefaultEncoding("UTF-8");
         resolver.setResolveLazily(true);
         return resolver;
     }

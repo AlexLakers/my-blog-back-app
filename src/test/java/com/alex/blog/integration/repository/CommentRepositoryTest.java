@@ -1,7 +1,7 @@
 package com.alex.blog.integration.repository;
 
 import com.alex.blog.model.Comment;
-import com.alex.blog.config.BaseIntegrationTest;
+import com.alex.blog.integration.BaseIntegrationTest;
 import com.alex.blog.repository.CommentRepository;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;

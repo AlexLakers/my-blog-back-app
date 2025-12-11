@@ -23,6 +23,12 @@
     <lombok.version>1.18.30</lombok.version>
     <junit.version>5.11.0</junit.version>
     <validator.version>8.0.0.Final</validator.version>
+    <json-path.version>2.9.0</json-path.version>
+    <aspectj.version>1.9.25</aspectj.version>
+    <logback.version>1.5.21</logback.version>
+    <assertj.version>3.27.6</assertj.version>
+    <hamcrest.version>3.0</hamcrest.version>
+    <tomcat.home>/home/alexlakers/apache-tomcat-10.1.49</tomcat.home>
   </properties>
 
   <dependencies>
@@ -115,18 +121,34 @@
     <dependency>
       <groupId>com.jayway.jsonpath</groupId>
       <artifactId>json-path</artifactId>
-      <version>2.9.0</version>
+      <version>${json-path.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-aop</artifactId>
+      <version>${spring.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.aspectj</groupId>
+      <artifactId>aspectjweaver</artifactId>
+      <version>${aspectj.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>ch.qos.logback</groupId>
+      <artifactId>logback-classic</artifactId>
+      <version>${logback.version}</version>
     </dependency>
     <dependency>
       <groupId>org.assertj</groupId>
       <artifactId>assertj-core</artifactId>
-      <version>3.27.6</version>
+      <version>${assertj.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.hamcrest</groupId>
       <artifactId>hamcrest</artifactId>
-      <version>3.0</version>
+      <version>${hamcrest.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -138,16 +160,12 @@
   </dependencies>
 
   <build>
-    <finalName>my-blog-back-app</finalName>
+    <finalName>ROOT</finalName>
     <pluginManagement>
       <plugins>
         <plugin>
           <artifactId>maven-compiler-plugin</artifactId>
           <version>3.8.1</version>
-        </plugin>
-        <plugin>
-          <artifactId>maven-war-plugin</artifactId>
-          <version>3.4.0</version>
         </plugin>
 
             <plugin>
@@ -164,6 +182,76 @@
                 </includes>
               </configuration>
             </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-resources-plugin</artifactId>
+          <version>3.3.1</version>
+          <executions>
+            <execution>
+              <id>deploy-setenv-sh</id>
+              <phase>package</phase>
+              <goals>
+                <goal>copy-resources</goal>
+              </goals>
+              <configuration>
+                <outputDirectory>${tomcat.home}/bin</outputDirectory>
+                <resources>
+                  <resource>
+                    <directory>deploy</directory>
+                    <filtering>true</filtering>
+                    <includes>
+                      <include>**/setenv.*</include>
+                    </includes>
+                  </resource>
+                </resources>
+                <overwrite>true</overwrite>
+              </configuration>
+            </execution>
+          </executions>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-war-plugin</artifactId>
+          <version>3.4.0</version>
+          <configuration>
+            <packagingExcludes>
+              WEB-INF/classes/**/*Test.class,
+              WEB-INF/lib/*-tests.jar
+            </packagingExcludes>
+          </configuration>
+        </plugin>
+        <plugin>
+          <groupId>org.codehaus.cargo</groupId>
+          <artifactId>cargo-maven3-plugin</artifactId>
+          <version>1.10.9</version>
+          <configuration>
+            <container>
+              <containerId>tomcat10x</containerId>
+              <type>installed</type>
+              <home>${tomcat.home}</home>
+            </container>
+            <configuration>
+              <type>existing</type>
+              <home>${tomcat.home}</home>
+              <properties>
+                <cargo.tomcat.manager.url>http://localhost:8080/manager/text</cargo.tomcat.manager.url>
+                <cargo.remote.username>admin</cargo.remote.username>
+                <cargo.remote.password>admin</cargo.remote.password>
+                <cargo.servlet.port>8080</cargo.servlet.port>
+              </properties>
+            </configuration>
+          </configuration>
+          <executions>
+            <execution>
+              <id>deploy</id>
+              <phase>deploy</phase>
+              <goals>
+                <goal>deploy</goal>
+              </goals>
+            </execution>
+          </executions>
+        </plugin>
+
       </plugins>
 
     </pluginManagement>

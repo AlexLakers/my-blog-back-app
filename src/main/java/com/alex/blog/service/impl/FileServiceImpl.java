@@ -18,24 +18,17 @@ import java.util.Optional;
 
 @Service
 public class FileServiceImpl implements FileService {
-
     @Value("${blog.image.base.dir:/home/my-blog/}")
     private String baseDir;
-
 
     @Override
     @SneakyThrows
     @Transactional
     public void saveFile(MultipartFile file, String fileName) {
-
         Path fullPath = Path.of(baseDir, fileName);
-
         Files.createDirectories(fullPath.getParent());
         file.transferTo(fullPath.toFile());
-
-
     }
-
 
     @SneakyThrows
     @Override

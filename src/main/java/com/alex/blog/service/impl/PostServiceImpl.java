@@ -1,5 +1,6 @@
 package com.alex.blog.service.impl;
 
+import com.alex.blog.aop.annotation.Loggable;
 import com.alex.blog.api.dto.PostCreateDto;
 import com.alex.blog.api.dto.PostReadDto;
 import com.alex.blog.api.dto.PostUpdateDto;
@@ -13,9 +14,12 @@ import com.alex.blog.search.Criteria;
 import com.alex.blog.search.PostPageDto;
 import com.alex.blog.search.SearchDto;
 import com.alex.blog.service.FileService;
+import com.alex.blog.service.MessageKey;
 import com.alex.blog.service.PostService;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
+import org.springframework.context.MessageSource;
+import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -36,30 +40,33 @@ public class PostServiceImpl implements PostService {
     private final PostMapper postMapper;
     private final CommentRepository commentRepository;
     private final FileService fileService;
+    private final MessageSource messageSource;
     private final Integer MAX_LENGTH_TXT = 128;
 
 
     @Override
     @Transactional(readOnly = true)
+    @Loggable
     public PostReadDto findOnePost(Long postId) {
         return postSearchRepository.findPostById(postId)
                 .map(postMapper::toPostReadDto)
-                .orElseThrow(() -> new EntityNotFoundException("The post not found by id:%d".formatted(postId)));
+                .orElseThrow(() -> new EntityNotFoundException(messageSource.getMessage(MessageKey.POST_NOT_FOUND, new Object[]{postId}, Locale.ENGLISH)));
 
     }
 
     @Transactional
     @Override
+    @Loggable
     public Long incrementLikesCount(Long postId) {
         if (!postManagementRepository.existsById(postId)) {
-            throw new EntityNotFoundException("The post not found by id:%d"
-                    .formatted(postId));
+            throw new EntityNotFoundException(messageSource.getMessage(MessageKey.POST_NOT_FOUND, new Object[]{postId}, Locale.ENGLISH));
         }
         return postManagementRepository.incrementLikesCount(postId);
     }
 
     @Override
     @Transactional(readOnly = true)
+    @Loggable
     public PostPageDto findPageByCriteria(SearchDto searchDto) {
         Map<Boolean, List<String>> tokens = Arrays.stream(searchDto.search().split(" "))
                 .filter(Predicate.not(String::isEmpty))
@@ -96,6 +103,7 @@ public class PostServiceImpl implements PostService {
 
     @Override
     @Transactional
+    @Loggable
     public PostReadDto updatePost(Long postId, PostUpdateDto postUpdateDto) {
 
         Post copiedPost = postSearchRepository.findPostById(postId)
@@ -103,19 +111,16 @@ public class PostServiceImpl implements PostService {
                     postMapper.updatePost(postUpdateDto, post);
                     System.out.println(post);
                     return post;
-                }).orElseThrow(() -> new EntityNotFoundException("The post not found by id:%d"
-                        .formatted(postId)));
+                }).orElseThrow(() -> new EntityNotFoundException(messageSource.getMessage(MessageKey.POST_NOT_FOUND, new Object[]{postId}, Locale.ENGLISH)));
 
-        var p=postMapper.toPostReadDto(postManagementRepository.update(copiedPost));
-        System.out.println("UPDATED"+p);
-                return p;
+        return postMapper.toPostReadDto(postManagementRepository.update(copiedPost));
+
     }
 
     @Transactional
     public void deletePost(Long postId) {
         if (!postManagementRepository.existsById(postId)) {
-            throw new EntityNotFoundException("The post not found by id:%d"
-                    .formatted(postId));
+            throw new EntityNotFoundException(messageSource.getMessage(MessageKey.POST_NOT_FOUND, new Object[]{postId}, Locale.ENGLISH));
         }
         postManagementRepository.delete(postId);
         commentRepository.deleteByPostId(postId);
@@ -124,27 +129,24 @@ public class PostServiceImpl implements PostService {
     @Override
     public byte[] getImage(Long postId) {
         if (!postManagementRepository.existsById(postId)) {
-            throw new EntityNotFoundException("The post not found by id:%d"
-                    .formatted(postId));
+            throw new EntityNotFoundException(messageSource.getMessage(MessageKey.POST_NOT_FOUND, new Object[]{postId}, Locale.ENGLISH));
         }
 
         return postManagementRepository.getImagePath(postId)
                 .filter(path -> !path.isEmpty())
                 .flatMap(fileService::getFile)
-                .orElseThrow(() -> new ImageNotFoundException("The image path or image not found for post with id:%d".formatted(postId)));
+                .orElseThrow(() -> new ImageNotFoundException(messageSource.getMessage(MessageKey.IMAGE_NOT_FOUND_EX, new Object[]{postId}, Locale.ENGLISH)));
     }
+
 
     @SneakyThrows
     @Override
     @Transactional
     public void updateImage(long postId, MultipartFile file) {
         if (!postManagementRepository.existsById(postId)) {
-            throw new EntityNotFoundException("The post with id:%1$d not found"
-                    .formatted(postId));
+            throw new EntityNotFoundException(messageSource.getMessage(MessageKey.POST_NOT_FOUND, new Object[]{postId}, Locale.ENGLISH));
         }
 
-        /*Optional<String> maybeOleName=postManagementRepository.getImagePath(postId)
-                .filter(path -> !path.isEmpty());*/
 
         deleteOldImageIfExists(postId);
 
@@ -152,9 +154,6 @@ public class PostServiceImpl implements PostService {
 
         fileService.saveFile(file, newImagePath);
         postManagementRepository.updateImagePath(postId, newImagePath);
-
-/*        maybeOleName.ifPresent(fileService::deleteFile);*/
-
 
     }
 
@@ -183,15 +182,15 @@ public class PostServiceImpl implements PostService {
     @Override
     public PostReadDto savePost(PostCreateDto postCreateDto) {
         if (postManagementRepository.existsByTitle(postCreateDto.title())) {
-                throw new TitleAlreadyExistsException("The title: %s already exists".formatted(postCreateDto.title()));
+            throw new TitleAlreadyExistsException(messageSource.getMessage(MessageKey.POST_TITLE_EXISTS_EX, new Object[]{postCreateDto.title()}, Locale.ENGLISH));
         }
+
 
         return Optional.ofNullable(postCreateDto)
                 .map(postMapper::toPost)
                 .map(postManagementRepository::save)
                 .map(postMapper::toPostReadDto)
-                .orElseThrow(() -> new EntityCreationException("An error occurred during saving a new post"));
-
+                .orElseThrow(() -> new EntityCreationException(messageSource.getMessage(MessageKey.POST_CREATION_EX, null, Locale.ENGLISH)));
     }
 
     private PostPageDto buildPostPageDto(Page<Post> page) {

@@ -1,24 +1,33 @@
-package com.alex.blog.config;
+package com.alex.blog.integration;
 
+import com.alex.blog.config.TestDataSourceConfig;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.io.TempDir;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
-import org.springframework.transaction.annotation.Transactional;
+
+import java.nio.file.Path;
 
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration(classes = TestDataSourceConfig.class)
-@TestPropertySource(locations = "classpath:application-test.properties")
-@Transactional
+@TestPropertySource(properties = {"blog.image.base.dir=${BLOG_TEST_DIR}"})
 public abstract class BaseIntegrationTest {
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
+    @TempDir
+    static Path sharedTempDir;
 
+    @BeforeAll
+    static void setUpEnv() {
+        System.setProperty("BLOG_TEST_DIR", sharedTempDir.toString());
+    }
     @BeforeEach
     void setUp() {
         cleanDB();

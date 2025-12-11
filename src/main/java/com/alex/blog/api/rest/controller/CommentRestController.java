@@ -18,9 +18,7 @@ import java.util.Objects;
 @RequestMapping("/api/posts")
 @RequiredArgsConstructor
 public class CommentRestController {
-
     private final CommentService commentService;
-
 
     @GetMapping(path = "/{postId}/comments/{commentId}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<CommentReadDto> getComment(@PathVariable("postId") Long postId,
