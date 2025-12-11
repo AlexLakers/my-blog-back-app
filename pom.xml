@@ -161,10 +161,6 @@
           <artifactId>maven-compiler-plugin</artifactId>
           <version>3.8.1</version>
         </plugin>
-        <plugin>
-          <artifactId>maven-war-plugin</artifactId>
-          <version>3.4.0</version>
-        </plugin>
 
             <plugin>
               <groupId>org.apache.maven.plugins</groupId>
@@ -180,6 +176,76 @@
                 </includes>
               </configuration>
             </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-resources-plugin</artifactId>
+          <version>3.3.1</version>
+          <executions>
+            <execution>
+              <id>deploy-setenv-sh</id>
+              <phase>package</phase>
+              <goals>
+                <goal>copy-resources</goal>
+              </goals>
+              <configuration>
+                <outputDirectory>${tomcat.home}/bin</outputDirectory>
+                <resources>
+                  <resource>
+                    <directory>deploy</directory>
+                    <filtering>true</filtering>
+                    <includes>
+                      <include>**/setenv.*</include>
+                    </includes>
+                  </resource>
+                </resources>
+                <overwrite>true</overwrite>
+              </configuration>
+            </execution>
+          </executions>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-war-plugin</artifactId>
+          <version>3.4.0</version>
+          <configuration>
+            <packagingExcludes>
+              WEB-INF/classes/**/*Test.class,
+              WEB-INF/lib/*-tests.jar
+            </packagingExcludes>
+          </configuration>
+        </plugin>
+        <plugin>
+          <groupId>org.codehaus.cargo</groupId>
+          <artifactId>cargo-maven3-plugin</artifactId>
+          <version>1.10.9</version>
+          <configuration>
+            <container>
+              <containerId>tomcat10x</containerId>
+              <type>installed</type>
+              <home>${tomcat.home}</home>
+            </container>
+            <configuration>
+              <type>existing</type>
+              <home>${tomcat.home}</home>
+              <properties>
+                <cargo.tomcat.manager.url>http://localhost:8080/manager/text</cargo.tomcat.manager.url>
+                <cargo.remote.username>admin</cargo.remote.username>
+                <cargo.remote.password>admin</cargo.remote.password>
+                <cargo.servlet.port>8080</cargo.servlet.port>
+              </properties>
+            </configuration>
+          </configuration>
+          <executions>
+            <execution>
+              <id>deploy</id>
+              <phase>deploy</phase>
+              <goals>
+                <goal>deploy</goal>
+              </goals>
+            </execution>
+          </executions>
+        </plugin>
+
       </plugins>
 
     </pluginManagement>
