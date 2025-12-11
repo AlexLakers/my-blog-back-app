@@ -6,12 +6,11 @@ import com.alex.blog.api.dto.PostUpdateDto;
 import com.alex.blog.config.TestWebConfig;
 import com.alex.blog.service.MessageKey;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.alex.blog.config.BaseIntegrationTest;
+import com.alex.blog.integration.BaseIntegrationTest;
 import lombok.SneakyThrows;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -22,7 +21,6 @@ import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -190,7 +188,7 @@ class PostRestControllerTest extends BaseIntegrationTest {
     void updateImage_ShouldImageNotFound404() throws Exception {
         mockMvc.perform(get("/api/posts/{id}/image", VALID_ID))
                 .andExpect(status().isNotFound())
-                .andExpect(content().string("The image path or image not found for post with id:%d".formatted(VALID_ID)));
+                .andExpect(content().string(messageSource.getMessage(MessageKey.IMAGE_NOT_FOUND_EX, new Object[]{VALID_ID},Locale.ENGLISH)));
     }
 
     @Test

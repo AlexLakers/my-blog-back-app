@@ -24,7 +24,6 @@ import java.util.List;
 @ComponentScan(basePackages = {"com.alex.blog.api.rest.controller",
         "com.alex.blog.exception.handler",
         "com.alex.blog.service"})
-@PropertySource("classpath:application-test.properties")
 public class TestWebConfig {
 
     @Bean

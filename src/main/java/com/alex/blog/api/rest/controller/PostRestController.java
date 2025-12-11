@@ -1,5 +1,6 @@
 package com.alex.blog.api.rest.controller;
 
+import com.alex.blog.aop.annotation.Loggable;
 import com.alex.blog.api.dto.PostCreateDto;
 import com.alex.blog.api.dto.PostReadDto;
 import com.alex.blog.api.dto.PostUpdateDto;
@@ -8,6 +9,9 @@ import com.alex.blog.search.SearchDto;
 import com.alex.blog.service.PostService;
 import jdk.jfr.ContentType;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.io.Resource;
 import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
@@ -22,12 +26,15 @@ import java.lang.invoke.VarHandle;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/posts")
+@Slf4j
 public class PostRestController {
 
     public final PostService postService;
 
+
     @GetMapping(path = "/{postId}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<PostReadDto> findById(@PathVariable("postId") Long postId) {
+
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(postService.findOnePost(postId));

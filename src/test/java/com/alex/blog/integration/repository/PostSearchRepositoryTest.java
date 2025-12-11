@@ -3,7 +3,7 @@ package com.alex.blog.integration.repository;
 import com.alex.blog.model.Post;
 import com.alex.blog.repository.impl.JdbcNativePostSearchImpl;
 import com.alex.blog.search.Criteria;
-import com.alex.blog.config.BaseIntegrationTest;
+import com.alex.blog.integration.BaseIntegrationTest;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
