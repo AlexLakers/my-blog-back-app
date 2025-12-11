@@ -39,11 +39,11 @@ public class CommentRestController {
                                                         @PathVariable("commentId") Long commentId,
                                                         @RequestBody CommentUpdateDto commentUpdateDto) {
 
-        return Objects.equals(postId, commentUpdateDto.postId()) && Objects.equals(commentId, commentUpdateDto.id())
+        return Objects.equals(commentId, commentUpdateDto.id())
                 ? ResponseEntity
                 .status(HttpStatus.OK)
-
                 .body(commentService.updateComment(postId, commentId, commentUpdateDto))
+
                 : ResponseEntity
                 .status(HttpStatus.BAD_REQUEST).build();
     }
