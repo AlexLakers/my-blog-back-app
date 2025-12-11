@@ -48,7 +48,6 @@ public class PostServiceImpl implements PostService {
     @Transactional(readOnly = true)
     @Loggable
     public PostReadDto findOnePost(Long postId) {
-        messageSource.getMessage("", null, Locale.getDefault());
         return postSearchRepository.findPostById(postId)
                 .map(postMapper::toPostReadDto)
                 .orElseThrow(() -> new EntityNotFoundException(messageSource.getMessage(MessageKey.POST_NOT_FOUND, new Object[]{postId}, Locale.ENGLISH)));

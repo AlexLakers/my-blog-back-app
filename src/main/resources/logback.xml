@@ -12,7 +12,7 @@
     </appender>
 
     <appender name="FILE" class="ch.qos.logback.core.FileAppender">
-        <file>/home/alexlakers/apache-tomcat-10.1.49/app.log</file>
+        <file>${tomcat.home}/app.log</file>
         <encoder>
             <pattern>${LOG_PATTERN}</pattern>
         </encoder>

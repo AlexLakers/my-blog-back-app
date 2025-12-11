@@ -56,11 +56,7 @@ public class PostRestController {
     }
 
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<PostPageDto> search(@ModelAttribute @Validated SearchDto searchDto
-                                               /* @RequestParam("search") String search,
-                                              @RequestParam("pageNumber") int pageNumber,
-                                              @RequestParam("pageSize") int pageSize*/) {
-
+    public ResponseEntity<PostPageDto> search(@ModelAttribute @Validated SearchDto searchDto) {
 
         return ResponseEntity
                 .status(HttpStatus.OK)
@@ -80,9 +76,9 @@ public class PostRestController {
     public ResponseEntity<byte[]> getImage(@PathVariable("postId") Long postId) {
         System.out.println(postId);
         byte[] image = postService.getImage(postId);
-        return /*image.length > 0*/
-              ResponseEntity.status(HttpStatus.OK).contentType(MediaType.IMAGE_JPEG).cacheControl(CacheControl.noStore()).body(image);
-               /* : ResponseEntity.status(HttpStatus.BAD_REQUEST).build();*/
+        return image.length > 0
+                ? ResponseEntity.status(HttpStatus.OK).contentType(MediaType.IMAGE_JPEG).cacheControl(CacheControl.noStore()).body(image)
+                : ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
     }
 
     @PostMapping(path = "/{postId}/likes")

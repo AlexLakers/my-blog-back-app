@@ -13,7 +13,6 @@ public class LoggingAspect {
 
     @Pointcut("@annotation(com.alex.blog.aop.annotation.Loggable)")
     public void annotationPointcut() {
-
     }
 
     @Pointcut("execution(public * com.alex.blog.api.rest.controller..*(..))")
@@ -28,24 +27,18 @@ public class LoggingAspect {
 
         log.info("The method: {}() was started with args: {}",
                 fullMethodName, java.util.Arrays.toString(joinPoint.getArgs()));
-
         long startTime = System.currentTimeMillis();
 
         try {
-
             Object result = joinPoint.proceed();
-
-
             log.info("The method {}() finished successfully . The result: {}",
                     fullMethodName, result != null ? result : "void");
 
             long executionTime = System.currentTimeMillis() - startTime;
+
             log.debug("Method {}() is executed for {} ms", fullMethodName, executionTime);
-
             return result;
-
         } catch (Exception e) {
-
             log.error("An error in method{}(): {} has been detected", fullMethodName, e.getMessage(), e);
 
             throw e;
@@ -62,7 +55,6 @@ public class LoggingAspect {
     public void logAfterMethodExecution(JoinPoint joinPoint) throws Throwable {
         log.info("-----The endpoint '{}' was finished-----", getFullMethodName(joinPoint));
     }
-
 
     private String getFullMethodName(JoinPoint joinPoint) {
         String className = joinPoint.getTarget().getClass().getSimpleName();

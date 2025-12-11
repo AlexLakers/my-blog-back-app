@@ -21,7 +21,6 @@ public class JdbcNativePostManagementRepositoryImpl implements PostManagementRep
     private final JdbcTemplate jdbcTemplate;
     private final NamedParameterJdbcTemplate namedParameterJdbcTemplate;
 
-
     @Override
     public boolean existsById(Long postId) {
 
@@ -112,7 +111,6 @@ public class JdbcNativePostManagementRepositoryImpl implements PostManagementRep
 
         post.setId(updatedId);
         return post;
-
     }
 
     private Long updatePostWithoutTags(Post post) {
@@ -154,20 +152,6 @@ public class JdbcNativePostManagementRepositoryImpl implements PostManagementRep
                 """;
         namedParameterJdbcTemplate.batchUpdate(sqlLinkTagsToPost, batchArgsPostTag);
     }
-
-   /* private void saveTags(List<String> tags) {
-        SqlParameterSource[] batchArgsTags = tags.stream()
-                .map(tagName -> new MapSqlParameterSource("tagName", tagName))
-                .toArray(SqlParameterSource[]::new);
-
-        String sqlInsertTags = """
-                INSERT INTO tags (name)
-                SELECT :tagName
-                WHERE NOT EXISTS (SELECT 1 FROM tags WHERE name = :tagName)
-                """;
-
-        namedParameterJdbcTemplate.batchUpdate(sqlInsertTags, batchArgsTags);
-    }*/
 
     private Long savePostWithoutTags(Post post) {
         String sqlInsertPost = """
