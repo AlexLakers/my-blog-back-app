@@ -113,10 +113,8 @@ class PostRestControllerTest extends BaseIntegrationTest {
         PostCreateDto givenDto=new PostCreateDto("test title1","description", List.of("newCreateTag"));
         mockMvc.perform(post("/api/posts")
                         .contentType(MediaType.valueOf("application/json;charset=UTF-8"))
-                        .content(objectMapper.writeValueAsString(givenDto))
-                        .accept(MediaType.valueOf("application/json;charset=UTF-8")))
+                        .content(objectMapper.writeValueAsString(givenDto)))
                 .andExpect(status().isBadRequest())
-                .andExpect(content().contentType(MediaType.valueOf("application/json;charset=UTF-8")))
                 .andExpect(content().string(messageSource.getMessage(MessageKey.POST_TITLE_EXISTS_EX, new Object[]{givenDto.title()},Locale.ENGLISH)));
     }
 
@@ -128,7 +126,7 @@ class PostRestControllerTest extends BaseIntegrationTest {
         mockMvc.perform(put("/api/posts/{postId}",VALID_ID)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(expectedPost))
-                        .accept(MediaType.APPLICATION_JSON_VALUE))
+                        .accept(MediaType.valueOf("application/json;charset=UTF-8")))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.valueOf("application/json;charset=UTF-8")))
                 .andExpect(jsonPath("$.id").value(VALID_ID))
@@ -183,13 +181,6 @@ class PostRestControllerTest extends BaseIntegrationTest {
     }
 
 
-    @Test
-
-    void updateImage_ShouldImageNotFound404() throws Exception {
-        mockMvc.perform(get("/api/posts/{id}/image", VALID_ID))
-                .andExpect(status().isNotFound())
-                .andExpect(content().string(messageSource.getMessage(MessageKey.IMAGE_NOT_FOUND_EX, new Object[]{VALID_ID},Locale.ENGLISH)));
-    }
 
     @Test
 

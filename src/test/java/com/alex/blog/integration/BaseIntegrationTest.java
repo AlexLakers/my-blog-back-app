@@ -15,19 +15,12 @@ import java.nio.file.Path;
 
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration(classes = TestDataSourceConfig.class)
-@TestPropertySource(properties = {"blog.image.base.dir=${BLOG_TEST_DIR}"})
 public abstract class BaseIntegrationTest {
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
-    @TempDir
-    static Path sharedTempDir;
 
-    @BeforeAll
-    static void setUpEnv() {
-        System.setProperty("BLOG_TEST_DIR", sharedTempDir.toString());
-    }
     @BeforeEach
     void setUp() {
         cleanDB();
@@ -46,10 +39,10 @@ public abstract class BaseIntegrationTest {
     void setDB() {
         jdbcTemplate.update("""
                                
-                 INSERT INTO posts(title,text,image_path,likes_count,comments_count)
-                        VALUES ('test title1','test desc1','1/image.jpg',2,3),
-                                ('test title2','test desc2','2/image.jpg',1,1),
-                        ('test title3','test desc3','3/image.jpg',3,4)
+                 INSERT INTO posts(title,text,likes_count,comments_count)
+                        VALUES ('test title1','test desc1',2,3),
+                                ('test title2','test desc2',1,1),
+                        ('test title3','test desc3',3,4)
                 """);
         jdbcTemplate.update("""
                 INSERT INTO comments(text,post_id)

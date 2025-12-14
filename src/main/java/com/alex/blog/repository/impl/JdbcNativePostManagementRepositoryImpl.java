@@ -3,6 +3,7 @@ package com.alex.blog.repository.impl;
 import com.alex.blog.model.Post;
 import com.alex.blog.repository.PostManagementRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
@@ -39,13 +40,17 @@ public class JdbcNativePostManagementRepositoryImpl implements PostManagementRep
     }
 
     @Override
-    public Optional<String> getImagePath(Long postId) {
+    public Optional<byte[]> getImage(Long postId) {
         String sqlSelect = """
-                SELECT image_path FROM posts WHERE id = ?
+                SELECT image FROM posts WHERE id = ?
                 """;
-        return Optional.ofNullable(jdbcTemplate.queryForObject(sqlSelect, String.class, postId));
-
+        try {
+            return Optional.ofNullable(jdbcTemplate.queryForObject(sqlSelect, byte[].class, postId));
+        } catch (EmptyResultDataAccessException e) {
+            return Optional.empty();
+        }
     }
+
 
     @Override
     public void delete(Long id) {
@@ -73,16 +78,18 @@ public class JdbcNativePostManagementRepositoryImpl implements PostManagementRep
     }
 
     @Override
-    public void updateImagePath(Long postId, String imagePath) {
+    public boolean updateImage(Long postId, byte[] image) {
+
         String sqlUpdate = """
-                UPDATE posts SET image_path = ?
+                UPDATE posts SET image = ?
                 WHERE id = ?
                 """;
-        jdbcTemplate.update(sqlUpdate, imagePath, postId);
+        return jdbcTemplate.update(sqlUpdate, image, postId) > 0;
     }
 
+
     @Override
-    public Long incrementCommentsCount(Long postId,Long incValue) {
+    public Long incrementCommentsCount(Long postId, Long incValue) {
         String sql = """
                     UPDATE posts
                     SET  comments_count=comments_count+?

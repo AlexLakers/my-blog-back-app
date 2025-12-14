@@ -24,6 +24,7 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
@@ -42,8 +43,6 @@ class PostServiceTest {
     @Autowired
     private PostMapper postMapper;
     @Autowired
-    private FileService fileService;
-    @Autowired
     CommentRepository commentRepository;
     @Autowired
     private MessageSource messageSource;
@@ -52,13 +51,13 @@ class PostServiceTest {
 
     @BeforeEach
     void resetMocks() {
-        reset(postManagementRepository,commentRepository,postSearchRepository,postMapper,fileService);
+        reset(postManagementRepository,commentRepository,postSearchRepository,postMapper);
     }
 
 
     private final static Long VALID_ID = 1L;
     private final static Long INVALID_ID = 10000L;
-    private final static Post post = new Post(1L, "test title1", "test desc1", List.of("test_tag1"), "1/image.jpg", 2L, 3L);
+    private final static Post post = new Post(1L, "test title1", "test desc1", List.of("test_tag1"), new byte[]{1,2,3,4}, 2L, 3L);
     PostReadDto expectedDto = new PostReadDto(1L, "test title1", "test desc1", List.of("test_tag1"), 2L, 3L);
 
     @Test
@@ -193,8 +192,8 @@ class PostServiceTest {
     void getImage_shouldReturnArrayBytesSuccess() {
         byte[] expectedImage = new byte[]{1, 2, 3, 4};
         Mockito.when(postManagementRepository.existsById(VALID_ID)).thenReturn(true);
-        Mockito.when(postManagementRepository.getImagePath(VALID_ID)).thenReturn(Optional.of(post.getImagePath()));
-        Mockito.when(fileService.getFile(post.getImagePath())).thenReturn(Optional.of(expectedImage));
+        Mockito.when(postManagementRepository.getImage(VALID_ID)).thenReturn(Optional.of(expectedImage));
+
 
         byte[] image = postService.getImage(VALID_ID);
 
@@ -208,20 +207,17 @@ class PostServiceTest {
                 .isThrownBy(() -> postService.getImage(INVALID_ID))
                 .withMessage(messageSource.getMessage(MessageKey.POST_NOT_FOUND, new Object[]{INVALID_ID}, Locale.ENGLISH));
 
-        Mockito.verify(postManagementRepository, Mockito.times(0)).getImagePath(INVALID_ID);
-        Mockito.verify(fileService, Mockito.times(0)).getFile(post.getImagePath());
+        Mockito.verify(postManagementRepository, Mockito.times(0)).getImage(INVALID_ID);
     }
 
     @Test
-    void updateImage_shouldCallSaveFileAndUpdateImagePathSuccess() {
+    void updateImage_shouldCallSaveFileAndUpdateImageSuccess() throws IOException {
         MultipartFile image =new MockMultipartFile("image",new byte[]{1, 2, 3, 4});
         Mockito.when(postManagementRepository.existsById(VALID_ID)).thenReturn(true);
-        Mockito.doNothing().when(fileService).saveFile(Mockito.any(MultipartFile.class),Mockito.anyString());
-        Mockito.doNothing().when(postManagementRepository).updateImagePath(Mockito.anyLong(),Mockito.anyString());
+        Mockito.when(postManagementRepository.updateImage(VALID_ID,image.getBytes())).thenReturn(true);
 
         postService.updateImage(VALID_ID,image);
 
-        Mockito.verify(fileService,Mockito.times(1)).saveFile(Mockito.any(MultipartFile.class),Mockito.anyString());
-        Mockito.verify(postManagementRepository,Mockito.times(1)).updateImagePath(Mockito.anyLong(),Mockito.anyString());
+        Mockito.verify(postManagementRepository,Mockito.times(1)).updateImage(VALID_ID,image.getBytes());
     }
 }

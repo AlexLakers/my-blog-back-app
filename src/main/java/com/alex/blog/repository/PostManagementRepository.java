@@ -9,10 +9,10 @@ public interface PostManagementRepository {
     void delete(Long id);
     Post update(Post post);
     Long incrementLikesCount(Long postId);
-    void updateImagePath(Long postId, String imagePath);
+    boolean updateImage(Long postId, byte[] image);
     Long incrementCommentsCount(Long postId,Long incValue);
     boolean existsById(Long id);
     boolean existsByTitle(String title);
-    Optional<String> getImagePath(Long postId);
+    Optional<byte[]> getImage(Long postId);
 
 }
