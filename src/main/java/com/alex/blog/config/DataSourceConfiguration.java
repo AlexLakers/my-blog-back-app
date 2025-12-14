@@ -1,5 +1,6 @@
 package com.alex.blog.config;
 
+import com.zaxxer.hikari.HikariDataSource;
 import lombok.SneakyThrows;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -28,11 +29,18 @@ public class DataSourceConfiguration {
             @Value("${spring.datasource.username}") String username,
             @Value("${spring.datasource.password}") String password
     ) {
-        DriverManagerDataSource dataSource = new DriverManagerDataSource();
-        dataSource.setDriverClassName("org.postgresql.Driver");
-        dataSource.setUrl(url);
+        HikariDataSource dataSource = new HikariDataSource();
+
+        dataSource.setJdbcUrl(url);
         dataSource.setUsername(username);
         dataSource.setPassword(password);
+
+        dataSource.setMaximumPoolSize(20);
+        dataSource.setConnectionTimeout(30000);
+
+        dataSource.setConnectionTestQuery("SELECT 1");
+        dataSource.setDriverClassName("org.postgresql.Driver");
+
         return dataSource;
     }
 
