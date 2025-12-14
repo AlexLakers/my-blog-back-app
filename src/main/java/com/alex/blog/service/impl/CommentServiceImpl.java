@@ -100,7 +100,7 @@ public class CommentServiceImpl implements CommentService {
             throw new EntityNotFoundException(messageSource.getMessage(MessageKey.COMMENT_NOT_FOUND, new Object[]{commentId}, Locale.ENGLISH));
         }
         commentRepository.delete(commentId);
-        System.out.println(postManagementRepository.incrementCommentsCount(postId, -1L));
+        postManagementRepository.incrementCommentsCount(postId, -1L);
 
     }
 

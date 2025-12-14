@@ -122,7 +122,6 @@ public class JdbcNativePostSearchImpl implements PostSearchRepository {
     private Map<Long, List<String>> findTagsByPostsIds(List<Long> postsIds) {
         SqlParameterSource params = new MapSqlParameterSource("postsIds", postsIds);
         Map<Long, List<String>> tags = new HashMap<>();
-        System.out.println(postsIds);
         String sqlSelect = """
                 SELECT post_id, tag
                 FROM post_tags
