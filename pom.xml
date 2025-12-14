@@ -13,7 +13,7 @@
     <maven.compiler.source>21</maven.compiler.source>
     <maven.compiler.target>21</maven.compiler.target>
     <jackson.version>2.17.0</jackson.version>
-    <spring.version>7.0.0</spring.version>
+    <spring.version>6.2.10</spring.version>
     <h2.version>2.3.232</h2.version>
     <postgres.version>42.7.5</postgres.version>
     <spring.data.jdbc.version>4.0.0</spring.data.jdbc.version>
@@ -21,6 +21,14 @@
     <mapstruct.version>1.5.5.Final</mapstruct.version>
     <lombok-mapstruct-binding.version>0.2.0</lombok-mapstruct-binding.version>
     <lombok.version>1.18.30</lombok.version>
+    <junit.version>5.11.0</junit.version>
+    <validator.version>8.0.0.Final</validator.version>
+    <json-path.version>2.9.0</json-path.version>
+    <aspectj.version>1.9.25</aspectj.version>
+    <logback.version>1.5.21</logback.version>
+    <assertj.version>3.27.6</assertj.version>
+    <hamcrest.version>3.0</hamcrest.version>
+    <tomcat.home>/home/alexlakers/apache-tomcat-10.1.49</tomcat.home>
   </properties>
 
   <dependencies>
@@ -30,10 +38,25 @@
       <version>${spring.version}</version>
     </dependency>
     <dependency>
-        <groupId>jakarta.servlet</groupId>
-        <artifactId>jakarta.servlet-api</artifactId>
-        <version>${jacarta.version}</version>
+      <groupId>jakarta.servlet</groupId>
+      <artifactId>jakarta.servlet-api</artifactId>
+      <version>${jacarta.version}</version>
       <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+      <version>${jackson.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-core</artifactId>
+      <version>${jackson.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-annotations</artifactId>
+      <version>${jackson.version}</version>
     </dependency>
     <dependency>
       <groupId>com.h2database</groupId>
@@ -47,31 +70,195 @@
       <version>${postgres.version}</version>
     </dependency>
     <dependency>
+      <groupId>org.mapstruct</groupId>
+      <artifactId>mapstruct</artifactId>
+      <version>${mapstruct.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.hibernate</groupId>
+      <artifactId>hibernate-validator</artifactId>
+      <version>${validator.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.mapstruct</groupId>
+      <artifactId>mapstruct-processor</artifactId>
+      <version>${mapstruct.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.projectlombok</groupId>
+      <artifactId>lombok-mapstruct-binding</artifactId>
+      <version>${lombok-mapstruct-binding.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.projectlombok</groupId>
+      <artifactId>lombok</artifactId>
+      <version>${lombok.version}</version>
+    </dependency>
+    <dependency>
       <groupId>org.springframework.data</groupId>
       <artifactId>spring-data-jdbc</artifactId>
       <version>${spring.data.jdbc.version}</version>
     </dependency>
     <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <version>${junit.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.mockito</groupId>
+      <artifactId>mockito-junit-jupiter</artifactId>
+      <version>${junit.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.mockito</groupId>
+      <artifactId>mockito-core</artifactId>
+      <version>${junit.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.jayway.jsonpath</groupId>
+      <artifactId>json-path</artifactId>
+      <version>${json-path.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-aop</artifactId>
+      <version>${spring.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.aspectj</groupId>
+      <artifactId>aspectjweaver</artifactId>
+      <version>${aspectj.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>ch.qos.logback</groupId>
+      <artifactId>logback-classic</artifactId>
+      <version>${logback.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.assertj</groupId>
+      <artifactId>assertj-core</artifactId>
+      <version>${assertj.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.zaxxer</groupId>
+      <artifactId>HikariCP</artifactId>
+      <version>7.0.2</version>
+    </dependency>
+    <dependency>
+      <groupId>org.hamcrest</groupId>
+      <artifactId>hamcrest</artifactId>
+      <version>${hamcrest.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
       <groupId>org.springframework</groupId>
       <artifactId>spring-test</artifactId>
       <version>${spring.version}</version>
-      <scope>test</scope>
     </dependency>
+
   </dependencies>
 
   <build>
-    <finalName>my-blog-back-app</finalName>
+    <finalName>ROOT</finalName>
     <pluginManagement>
       <plugins>
         <plugin>
           <artifactId>maven-compiler-plugin</artifactId>
           <version>3.8.1</version>
         </plugin>
+
+            <plugin>
+              <groupId>org.apache.maven.plugins</groupId>
+              <artifactId>maven-surefire-plugin</artifactId>
+              <version>3.4.0</version>
+              <configuration>
+                <excludes>
+                  <exclude>**/config/Test*.java</exclude>
+                  <exclude>**/config/*Config.java</exclude>
+                </excludes>
+                <includes>
+                  <include>**/*Test.java</include>
+                </includes>
+              </configuration>
+            </plugin>
         <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-resources-plugin</artifactId>
+          <version>3.3.1</version>
+          <executions>
+            <execution>
+              <id>deploy-setenv-sh</id>
+              <phase>package</phase>
+              <goals>
+                <goal>copy-resources</goal>
+              </goals>
+              <configuration>
+                <outputDirectory>${tomcat.home}/bin</outputDirectory>
+                <resources>
+                  <resource>
+                    <directory>deploy</directory>
+                    <filtering>true</filtering>
+                    <includes>
+                      <include>**/setenv.*</include>
+                    </includes>
+                  </resource>
+                </resources>
+                <overwrite>true</overwrite>
+              </configuration>
+            </execution>
+          </executions>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-war-plugin</artifactId>
           <version>3.4.0</version>
+          <configuration>
+            <packagingExcludes>
+              WEB-INF/classes/**/*Test.class,
+              WEB-INF/lib/*-tests.jar
+            </packagingExcludes>
+          </configuration>
         </plugin>
+        <plugin>
+          <groupId>org.codehaus.cargo</groupId>
+          <artifactId>cargo-maven3-plugin</artifactId>
+          <version>1.10.9</version>
+          <configuration>
+            <container>
+              <containerId>tomcat10x</containerId>
+              <type>installed</type>
+              <home>${tomcat.home}</home>
+            </container>
+            <configuration>
+              <type>existing</type>
+              <home>${tomcat.home}</home>
+              <properties>
+                <cargo.tomcat.manager.url>http://localhost:8080/manager/text</cargo.tomcat.manager.url>
+                <cargo.remote.username>admin</cargo.remote.username>
+                <cargo.remote.password>admin</cargo.remote.password>
+                <cargo.servlet.port>8080</cargo.servlet.port>
+              </properties>
+            </configuration>
+          </configuration>
+          <executions>
+            <execution>
+              <id>deploy</id>
+              <phase>deploy</phase>
+              <goals>
+                <goal>deploy</goal>
+              </goals>
+            </execution>
+          </executions>
+        </plugin>
+
       </plugins>
+
     </pluginManagement>
   </build>
 
