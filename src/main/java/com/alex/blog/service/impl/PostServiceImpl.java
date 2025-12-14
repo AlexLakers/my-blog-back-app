@@ -13,19 +13,16 @@ import com.alex.blog.repository.PostSearchRepository;
 import com.alex.blog.search.Criteria;
 import com.alex.blog.search.PostPageDto;
 import com.alex.blog.search.SearchDto;
-import com.alex.blog.service.FileService;
 import com.alex.blog.service.MessageKey;
 import com.alex.blog.service.PostService;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import org.springframework.context.MessageSource;
-import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.*;
@@ -34,19 +31,19 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+
 public class PostServiceImpl implements PostService {
     private final PostManagementRepository postManagementRepository;
     private final PostSearchRepository postSearchRepository;
     private final PostMapper postMapper;
     private final CommentRepository commentRepository;
-    private final FileService fileService;
     private final MessageSource messageSource;
     private final Integer MAX_LENGTH_TXT = 128;
 
 
     @Override
-    @Transactional(readOnly = true)
     @Loggable
+    @Transactional(readOnly = true)
     public PostReadDto findOnePost(Long postId) {
         return postSearchRepository.findPostById(postId)
                 .map(postMapper::toPostReadDto)
@@ -109,7 +106,6 @@ public class PostServiceImpl implements PostService {
         Post copiedPost = postSearchRepository.findPostById(postId)
                 .map(post -> {
                     postMapper.updatePost(postUpdateDto, post);
-                    System.out.println(post);
                     return post;
                 }).orElseThrow(() -> new EntityNotFoundException(messageSource.getMessage(MessageKey.POST_NOT_FOUND, new Object[]{postId}, Locale.ENGLISH)));
 
@@ -132,9 +128,7 @@ public class PostServiceImpl implements PostService {
             throw new EntityNotFoundException(messageSource.getMessage(MessageKey.POST_NOT_FOUND, new Object[]{postId}, Locale.ENGLISH));
         }
 
-        return postManagementRepository.getImagePath(postId)
-                .filter(path -> !path.isEmpty())
-                .flatMap(fileService::getFile)
+        return postManagementRepository.getImage(postId)
                 .orElseThrow(() -> new ImageNotFoundException(messageSource.getMessage(MessageKey.IMAGE_NOT_FOUND_EX, new Object[]{postId}, Locale.ENGLISH)));
     }
 
@@ -142,40 +136,12 @@ public class PostServiceImpl implements PostService {
     @SneakyThrows
     @Override
     @Transactional
-    public void updateImage(long postId, MultipartFile file) {
+    public boolean updateImage(long postId, MultipartFile image) {
         if (!postManagementRepository.existsById(postId)) {
             throw new EntityNotFoundException(messageSource.getMessage(MessageKey.POST_NOT_FOUND, new Object[]{postId}, Locale.ENGLISH));
         }
 
-
-        deleteOldImageIfExists(postId);
-
-        String newImagePath = generateNewImagePath(postId, file.getOriginalFilename());
-
-        fileService.saveFile(file, newImagePath);
-        postManagementRepository.updateImagePath(postId, newImagePath);
-
-    }
-
-
-    private String generateNewImagePath(Long postId, String imageName) {
-        String type = getTypeFromFileName(imageName);
-        return "post_%1$d/".formatted(postId) + UUID.randomUUID() + type;
-
-
-    }
-
-    private void deleteOldImageIfExists(Long postId) {
-        postManagementRepository.getImagePath(postId)
-                .filter(path -> !path.isEmpty())
-                .ifPresent(fileService::deleteFile);
-    }
-
-    private String getTypeFromFileName(String fileName) {
-        return Optional.ofNullable(fileName)
-                .filter(name -> name.contains("."))
-                .map(name -> name.substring(name.lastIndexOf(".")))
-                .orElse("");
+        return postManagementRepository.updateImage(postId, image.getBytes());
     }
 
     @Transactional

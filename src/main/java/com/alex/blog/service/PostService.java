@@ -19,5 +19,5 @@ public interface PostService {
     PostReadDto savePost(PostCreateDto postCreateDto);
     void deletePost(Long postId);
     byte[] getImage(Long postId);
-    void updateImage(long postId, MultipartFile file);
+    boolean updateImage(long postId, MultipartFile file);
 }

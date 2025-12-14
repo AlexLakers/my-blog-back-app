@@ -22,7 +22,7 @@ class PostManagementRepositoryTest extends BaseIntegrationTest {
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
-    private final static Post post = new Post(1L, "test title1", "test desc1", List.of("test_tag1"), "1/image.jpg", 2L, 3L);
+    private final static Post post = new Post(1L, "test title1", "test desc1", List.of("test_tag1"), new byte[]{1,2,3,4}, 2L, 3L);
     private final static Long VALID_ID = 1L;
 
 
@@ -48,10 +48,15 @@ class PostManagementRepositoryTest extends BaseIntegrationTest {
     }
 
     @Test
-    void getImagePath_shouldReturnPath() {
-        Optional<String> actualPath = postManagementRepository.getImagePath(VALID_ID);
+    void getImage_shouldReturnBytesArray() {
 
-        Assertions.assertThat(actualPath.get()).isEqualTo(post.getImagePath());
+        byte[] image = new byte[]{1, 2, 3, 4};
+
+        Assertions.assertThat(postManagementRepository.updateImage(VALID_ID, image));
+
+        Optional<byte[]> actualImage = postManagementRepository.getImage(VALID_ID);
+
+        Assertions.assertThat(actualImage.get()).isEqualTo(post.getImage());
     }
 
 
@@ -72,16 +77,6 @@ class PostManagementRepositoryTest extends BaseIntegrationTest {
         Assertions.assertThat(actualLikes).isEqualTo(expectedLikes);
     }
 
-    @Test
-    void updateImagePath_shouldUpdatePath() {
-        String givenNewPath = "new/path";
-        postManagementRepository.updateImagePath(VALID_ID, givenNewPath);
-
-        String expectedPath = jdbcTemplate.queryForObject("SELECT image_path FROM posts WHERE id = ?", String.class, VALID_ID);
-
-        Assertions.assertThat(expectedPath).isEqualTo(givenNewPath);
-
-    }
 
     @ParameterizedTest
 
@@ -96,7 +91,7 @@ class PostManagementRepositoryTest extends BaseIntegrationTest {
 
     @Test
     void update_shouldReturnUpdatedPost() {
-        Post expectedPost = new Post(VALID_ID, "newUpdateTitle", "description", List.of("newUpdateTag"), "new/path", 1L, 1L);
+        Post expectedPost = new Post(VALID_ID, "newUpdateTitle", "description", List.of("newUpdateTag"), new byte[]{1,2,3,4}, 1L, 1L);
 
         Post actualPost = postManagementRepository.update(expectedPost);
 
@@ -105,7 +100,7 @@ class PostManagementRepositoryTest extends BaseIntegrationTest {
 
     @Test
     void save_shouldReturnPersistPost() {
-        Post expectedPost = new Post(null, "newTitle", "newDescription", List.of("newCreateTag"), "new/path", 0L, 0L);
+        Post expectedPost = new Post(null, "newTitle", "newDescription", List.of("newCreateTag"), new byte[]{1,2,3,4}, 0L, 0L);
 
         Post savedPost=postManagementRepository.save(expectedPost);
 

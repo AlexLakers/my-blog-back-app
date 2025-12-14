@@ -3,7 +3,7 @@ CREATE TABLE IF NOT EXISTS posts
     id             BIGINT GENERATED ALWAYS AS IDENTITY NOT NULL,
     title          VARCHAR(256)                        NOT NULL,
     text           TEXT                                NOT NULL,
-    image_path     VARCHAR(512),
+    image           bytea,
     likes_count    BIGINT    DEFAULT 0,
     comments_count BIGINT    DEFAULT 0,
     created_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

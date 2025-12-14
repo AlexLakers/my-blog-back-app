@@ -6,19 +6,14 @@ import com.alex.blog.repository.CommentRepository;
 import com.alex.blog.repository.PostManagementRepository;
 import com.alex.blog.repository.PostSearchRepository;
 import com.alex.blog.service.CommentService;
-import com.alex.blog.service.FileService;
 import com.alex.blog.service.PostService;
 import com.alex.blog.service.impl.CommentServiceImpl;
 import com.alex.blog.service.impl.PostServiceImpl;
 import org.mockito.Mockito;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Import;
-import org.springframework.context.annotation.Primary;
 import org.springframework.context.support.ResourceBundleMessageSource;
-import org.springframework.test.annotation.DirtiesContext;
 
 @Configuration
 public class TestServiceConfig {
@@ -49,10 +44,6 @@ public class TestServiceConfig {
     }
 
     @Bean
-    public FileService fileService() {
-        return Mockito.mock(FileService.class);
-    }
-    @Bean
     public MessageSource messageSource() {
         ResourceBundleMessageSource messageSource = new ResourceBundleMessageSource();
         messageSource.setBasename("messages-test");
@@ -67,7 +58,6 @@ public class TestServiceConfig {
                 postSearchRepository(),
                 postMapper(),
                 commentRepository(),
-                fileService(),
                 messageSource());
     }
 
