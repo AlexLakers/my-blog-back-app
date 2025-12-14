@@ -34,7 +34,6 @@ public class JdbcNativePostSearchImpl implements PostSearchRepository {
 
         StringBuilder sqlCount = new StringBuilder("""
                 SELECT COUNT (DISTINCT p.id) FROM posts AS p
-                LEFT JOIN post_tags AS pt ON p.id = pt.post_id
                 """)
                 .append(sqlWhere);
 
@@ -42,15 +41,12 @@ public class JdbcNativePostSearchImpl implements PostSearchRepository {
 
         StringBuilder sqlSelect = new StringBuilder("""
                 SELECT DISTINCT p.id,p.title,p.text,p.likes_count,p.comments_count FROM posts AS p
-                LEFT JOIN post_tags AS pt ON p.id = pt.post_id
                 """)
                 .append(sqlWhere)
                 .append(" ORDER BY p.id LIMIT :limit OFFSET :offset");
 
-        System.out.println(sqlSelect);
 
         List<Post> postsWithoutTags = namedParameterJdbcTemplate.query(sqlSelect.toString(), params, getRowMapperPost());
-        System.out.println(postsWithoutTags);
 
         List<Post> posts = fetchTags(postsWithoutTags);
         return new PageImpl<>(posts, PageRequest.of(pageable.getPageNumber(), pageable.getPageSize()), countElements);
