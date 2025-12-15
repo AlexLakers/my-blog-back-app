@@ -1,11 +1,8 @@
 package com.alex.blog.integration.repository;
 
 import com.alex.blog.model.Comment;
-import com.alex.blog.integration.BaseIntegrationTest;
 import com.alex.blog.repository.CommentRepository;
-import com.alex.blog.repository.PostSearchRepository;
 import com.alex.blog.repository.impl.JdbcNativeCommentRepositoryImpl;
-import com.alex.blog.repository.impl.JdbcNativePostSearchImpl;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,7 +10,7 @@ import org.springframework.boot.test.autoconfigure.jdbc.JdbcTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.jdbc.Sql;
 
 import java.util.List;
@@ -21,7 +18,8 @@ import java.util.Optional;
 
 @JdbcTest
 @Sql("classpath:data-test.sql")
-class CommentRepositoryTest extends BaseIntegrationTest {
+@ActiveProfiles("test")
+class CommentRepositoryIT {
 
     private static final Comment comment = new Comment(1L, "test comment1", 1L);
     private final static Long VALID_ID = 1L;

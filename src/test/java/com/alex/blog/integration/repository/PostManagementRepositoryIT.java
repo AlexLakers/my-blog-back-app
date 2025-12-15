@@ -1,11 +1,8 @@
 package com.alex.blog.integration.repository;
 
 import com.alex.blog.model.Post;
-import com.alex.blog.integration.BaseIntegrationTest;
 import com.alex.blog.repository.PostManagementRepository;
-import com.alex.blog.repository.PostSearchRepository;
 import com.alex.blog.repository.impl.JdbcNativePostManagementRepositoryImpl;
-import com.alex.blog.repository.impl.JdbcNativePostSearchImpl;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -15,9 +12,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.JdbcTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.jdbc.Sql;
 
 import java.util.List;
@@ -27,7 +24,8 @@ import static org.mockito.Mockito.mock;
 
 @JdbcTest
 @Sql("classpath:data-test.sql")
-class PostManagementRepositoryTest{
+@ActiveProfiles("test")
+class PostManagementRepositoryIT {
 
     @Autowired
     private PostManagementRepository postManagementRepository;

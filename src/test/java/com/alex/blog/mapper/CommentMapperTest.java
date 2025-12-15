@@ -3,19 +3,14 @@ package com.alex.blog.mapper;
 import com.alex.blog.api.dto.CommentCreateDto;
 import com.alex.blog.api.dto.CommentReadDto;
 import com.alex.blog.api.dto.CommentUpdateDto;
-import com.alex.blog.config.TestMapperConfig;
 import com.alex.blog.model.Comment;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mapstruct.factory.Mappers;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 class CommentMapperTest {
     private CommentMapper commentMapper = Mappers.getMapper(CommentMapper.class);

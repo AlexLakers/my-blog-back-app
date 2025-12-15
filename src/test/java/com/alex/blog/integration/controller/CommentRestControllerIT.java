@@ -5,7 +5,6 @@ import com.alex.blog.api.dto.CommentUpdateDto;
 import com.alex.blog.service.MessageKey;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.assertj.core.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -13,14 +12,9 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.MessageSource;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.jdbc.Sql;
-import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.context.WebApplicationContext;
-import org.springframework.web.filter.CharacterEncodingFilter;
 
 import java.util.Locale;
 
@@ -32,11 +26,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK)
-@Sql("classpath:data-test.sql")
-@AutoConfigureMockMvc
-@Transactional
-class CommentRestControllerTest {
+
+class CommentRestControllerIT extends BaseIntegrationTest{
 
     private final static Long VALID_ID = 1L;
     private final static Long INVALID_ID = 1000000L;
@@ -100,7 +91,7 @@ class CommentRestControllerTest {
         mockMvc.perform(put("/api/posts/{postId}/comments/{commentId}", VALID_ID, VALID_ID)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(givenDto))
-                        .accept(MediaType.valueOf("application/json;charset=UTF-8")))
+                        .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(VALID_ID))
                 .andExpect(jsonPath("$.text").value(givenDto.text()))

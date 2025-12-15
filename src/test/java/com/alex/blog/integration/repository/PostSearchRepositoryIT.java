@@ -4,7 +4,6 @@ import com.alex.blog.model.Post;
 import com.alex.blog.repository.PostSearchRepository;
 import com.alex.blog.repository.impl.JdbcNativePostSearchImpl;
 import com.alex.blog.search.Criteria;
-import com.alex.blog.integration.BaseIntegrationTest;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -19,6 +18,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.jdbc.Sql;
 
 import java.util.List;
@@ -28,7 +28,8 @@ import java.util.stream.Stream;
 
 @JdbcTest
 @Sql("classpath:data-test.sql")
-class PostSearchRepositoryTest{
+@ActiveProfiles("test")
+class PostSearchRepositoryIT {
 
     private final static Post post = new Post(1L, "test title1", "test desc1", List.of("test_tag1"), null, 2L, 3L);
 

@@ -3,7 +3,6 @@ package com.alex.blog.service;
 import com.alex.blog.api.dto.PostCreateDto;
 import com.alex.blog.api.dto.PostReadDto;
 import com.alex.blog.api.dto.PostUpdateDto;
-import com.alex.blog.config.TestServiceConfig;
 import com.alex.blog.exception.EntityNotFoundException;
 import com.alex.blog.exception.TitleAlreadyExistsException;
 import com.alex.blog.mapper.PostMapper;
@@ -11,19 +10,14 @@ import com.alex.blog.model.Post;
 import com.alex.blog.repository.CommentRepository;
 import com.alex.blog.repository.PostManagementRepository;
 import com.alex.blog.repository.PostSearchRepository;
-import com.alex.blog.service.impl.PostServiceImpl;
-import org.assertj.core.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.MessageSource;
 import org.springframework.mock.web.MockMultipartFile;
-import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -37,6 +31,7 @@ import static org.mockito.Mockito.*;
 
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
+@ActiveProfiles("test")
 class PostServiceTest {
 
     @MockitoBean
