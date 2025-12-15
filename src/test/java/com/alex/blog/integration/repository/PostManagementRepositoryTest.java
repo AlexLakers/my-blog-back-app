@@ -3,26 +3,38 @@ package com.alex.blog.integration.repository;
 import com.alex.blog.model.Post;
 import com.alex.blog.integration.BaseIntegrationTest;
 import com.alex.blog.repository.PostManagementRepository;
+import com.alex.blog.repository.PostSearchRepository;
+import com.alex.blog.repository.impl.JdbcNativePostManagementRepositoryImpl;
+import com.alex.blog.repository.impl.JdbcNativePostSearchImpl;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.jdbc.JdbcTest;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+import org.springframework.test.context.jdbc.Sql;
 
 import java.util.List;
 import java.util.Optional;
 
+import static org.mockito.Mockito.mock;
 
-class PostManagementRepositoryTest extends BaseIntegrationTest {
+@JdbcTest
+@Sql("classpath:data-test.sql")
+class PostManagementRepositoryTest{
 
     @Autowired
     private PostManagementRepository postManagementRepository;
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
-    private final static Post post = new Post(1L, "test title1", "test desc1", List.of("test_tag1"), new byte[]{1,2,3,4}, 2L, 3L);
+    private final static Post post = new Post(1L, "test title1", "test desc1", List.of("test_tag1"), new byte[]{1, 2, 3, 4}, 2L, 3L);
     private final static Long VALID_ID = 1L;
 
 
@@ -91,7 +103,7 @@ class PostManagementRepositoryTest extends BaseIntegrationTest {
 
     @Test
     void update_shouldReturnUpdatedPost() {
-        Post expectedPost = new Post(VALID_ID, "newUpdateTitle", "description", List.of("newUpdateTag"), new byte[]{1,2,3,4}, 1L, 1L);
+        Post expectedPost = new Post(VALID_ID, "newUpdateTitle", "description", List.of("newUpdateTag"), new byte[]{1, 2, 3, 4}, 1L, 1L);
 
         Post actualPost = postManagementRepository.update(expectedPost);
 
@@ -100,10 +112,22 @@ class PostManagementRepositoryTest extends BaseIntegrationTest {
 
     @Test
     void save_shouldReturnPersistPost() {
-        Post expectedPost = new Post(null, "newTitle", "newDescription", List.of("newCreateTag"), new byte[]{1,2,3,4}, 0L, 0L);
+        Post expectedPost = new Post(null, "newTitle", "newDescription", List.of("newCreateTag"), new byte[]{1, 2, 3, 4}, 0L, 0L);
 
-        Post savedPost=postManagementRepository.save(expectedPost);
+        Post savedPost = postManagementRepository.save(expectedPost);
 
-        Assertions.assertThat(savedPost).hasFieldOrPropertyWithValue("id",4L);
+        Assertions.assertThat(savedPost).hasFieldOrPropertyWithValue("id", 4L);
     }
+
+    @TestConfiguration
+    static class TestPostManagementRepositoryConfig {
+        @Bean
+        public PostManagementRepository postManagementRepository(
+                NamedParameterJdbcTemplate namedParameterJdbcTemplate,
+                JdbcTemplate jdbcTemplate) {
+
+            return new JdbcNativePostManagementRepositoryImpl(jdbcTemplate, namedParameterJdbcTemplate);
+        }
+    }
+
 }
