@@ -16,6 +16,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.test.context.bean.override.mockito.MockReset;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -36,7 +37,7 @@ public class PostRestControllerMockIT {
 
     @Autowired
     private ObjectMapper objectMapper;
-    @MockitoBean
+    @MockitoBean(reset = MockReset.BEFORE)
     private PostService postService;
     @Autowired
     private MockMvc mockMvc;
