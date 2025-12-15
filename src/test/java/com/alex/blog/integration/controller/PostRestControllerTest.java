@@ -3,11 +3,8 @@ package com.alex.blog.integration.controller;
 import com.alex.blog.api.dto.PostCreateDto;
 import com.alex.blog.api.dto.PostReadDto;
 import com.alex.blog.api.dto.PostUpdateDto;
-import com.alex.blog.config.TestWebConfig;
 import com.alex.blog.service.MessageKey;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.alex.blog.integration.BaseIntegrationTest;
-import lombok.SneakyThrows;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -15,13 +12,14 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.MessageSource;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.mock.web.MockMultipartFile;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.web.WebAppConfiguration;
+import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.transaction.annotation.Transactional;
@@ -40,12 +38,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 
-@ContextConfiguration(classes = TestWebConfig.class)
-@WebAppConfiguration
-class PostRestControllerTest extends BaseIntegrationTest {
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK)
+@Sql("classpath:data-test.sql")
+@AutoConfigureMockMvc
+@Transactional
+class PostRestControllerTest {
 
-    @Autowired
-    private WebApplicationContext webApplicationContext;
     private static final Long VALID_ID = 1L;
     private static final Long INVALID_ID = 10000L;
 
@@ -54,29 +52,19 @@ class PostRestControllerTest extends BaseIntegrationTest {
     @Autowired
     private JdbcTemplate jdbcTemplate;
     @Autowired
-    private MessageSource messageSource;;
+    private MessageSource messageSource;
 
+    @Autowired
     private MockMvc mockMvc;
-
-
-    @BeforeEach
-    void setUp() {
-
-        mockMvc = MockMvcBuilders
-                .webAppContextSetup(webApplicationContext)
-                .addFilter(new CharacterEncodingFilter("UTF-8", true))
-                .alwaysDo(print())
-                .build();
-    }
 
 
     @Test
     void findById_shouldReturnPostJsonSuccess() throws Exception {
-        PostReadDto expectedPost=new PostReadDto(1L, "test title1", "test desc1", List.of("test_tag1"), 2L, 3L);
+        PostReadDto expectedPost = new PostReadDto(1L, "test title1", "test desc1", List.of("test_tag1"), 2L, 3L);
 
         mockMvc.perform(get("/api/posts/{postId}", VALID_ID))
                 .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.valueOf("application/json;charset=UTF-8")))
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.title").value(expectedPost.title()))
                 .andExpect(jsonPath("$.id").value(expectedPost.id()))
                 .andExpect(jsonPath("$.tags", hasSize(1)))
@@ -93,42 +81,41 @@ class PostRestControllerTest extends BaseIntegrationTest {
     }
 
 
-
     @Test
     void create_shouldReturnCreatedJson() throws Exception {
-        PostCreateDto newPost=new PostCreateDto("test title100","description", List.of("newCreateTag"));
+        PostCreateDto newPost = new PostCreateDto("test title100", "description", List.of("newCreateTag"));
 
         mockMvc.perform(post("/api/posts")
-                        .contentType(MediaType.valueOf("application/json;charset=UTF-8"))
+                        .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(newPost))
-                        .accept(MediaType.valueOf("application/json;charset=UTF-8")))
+                        .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isCreated())
-                .andExpect(content().contentType(MediaType.valueOf("application/json;charset=UTF-8")))
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.id").value(4L))
                 .andExpect(jsonPath("$.title").value(newPost.title()));
     }
 
     @Test
     void create_shouldTitleAlreadyExistBadRequest400() throws Exception {
-        PostCreateDto givenDto=new PostCreateDto("test title1","description", List.of("newCreateTag"));
+        PostCreateDto givenDto = new PostCreateDto("test title1", "description", List.of("newCreateTag"));
         mockMvc.perform(post("/api/posts")
-                        .contentType(MediaType.valueOf("application/json;charset=UTF-8"))
+                        .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(givenDto)))
                 .andExpect(status().isBadRequest())
-                .andExpect(content().string(messageSource.getMessage(MessageKey.POST_TITLE_EXISTS_EX, new Object[]{givenDto.title()},Locale.ENGLISH)));
+                .andExpect(content().string(messageSource.getMessage(MessageKey.POST_TITLE_EXISTS_EX, new Object[]{givenDto.title()}, Locale.ENGLISH)));
     }
 
 
     @Test
     void update_shouldReturnUpdatedJsonSuccess() throws Exception {
-        PostReadDto expectedPost=new PostReadDto(1L, "test title1", "test desc1", List.of("test_tag1"), 2L, 3L);
+        PostReadDto expectedPost = new PostReadDto(1L, "test title1", "test desc1", List.of("test_tag1"), 2L, 3L);
 
-        mockMvc.perform(put("/api/posts/{postId}",VALID_ID)
+        mockMvc.perform(put("/api/posts/{postId}", VALID_ID)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(expectedPost))
-                        .accept(MediaType.valueOf("application/json;charset=UTF-8")))
+                        .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.valueOf("application/json;charset=UTF-8")))
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.id").value(VALID_ID))
                 .andExpect(jsonPath("$.title").value(expectedPost.title()))
                 .andExpect(jsonPath("$.id").value(expectedPost.id()))
@@ -138,27 +125,26 @@ class PostRestControllerTest extends BaseIntegrationTest {
 
     @Test
     void update_shouldReturnPostNotFound404() throws Exception {
-        PostUpdateDto givenDto=new PostUpdateDto(VALID_ID,"testTitle","testText",null);
+        PostUpdateDto givenDto = new PostUpdateDto(VALID_ID, "testTitle", "testText", null);
 
         mockMvc.perform(put("/api/posts/{postId}", INVALID_ID)
-                        .contentType(MediaType.valueOf("application/json;charset=UTF-8"))
+                        .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(givenDto)))
                 .andExpect(status().isNotFound())
-                .andExpect(content().string(messageSource.getMessage(MessageKey.POST_NOT_FOUND, new Object[]{INVALID_ID},Locale.ENGLISH)));
+                .andExpect(content().string(messageSource.getMessage(MessageKey.POST_NOT_FOUND, new Object[]{INVALID_ID}, Locale.ENGLISH)));
     }
 
 
-    @SneakyThrows
     @ParameterizedTest
     @MethodSource("getArgsForSearch")
-    void givenTagsOrAndTitle_search_shouldReturnJSONArray(String paramSearch, String pageSize, int sizeArray, String hasPrev, String hasNext, String lastPage) {
+    void givenTagsOrAndTitle_search_shouldReturnJSONArray(String paramSearch, String pageSize, int sizeArray, String hasPrev, String hasNext, String lastPage) throws Exception {
         mockMvc.perform(get("/api/posts")
                         .param("search", paramSearch)
                         .param("pageNumber", "1")
                         .param("pageSize", pageSize)
                 )
                 .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.valueOf("application/json;charset=UTF-8")))
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.posts", hasSize(sizeArray)))
                 .andExpect(jsonPath("$.posts[0].title").value("test title1"))
                 .andExpect(jsonPath("$.posts[0].id").value("1"))
@@ -181,14 +167,12 @@ class PostRestControllerTest extends BaseIntegrationTest {
     }
 
 
-
     @Test
-
     void updateImage_ShouldPostNotFound404() throws Exception {
 
         mockMvc.perform(get("/api/posts/{id}/image", INVALID_ID))
                 .andExpect(status().isNotFound())
-                .andExpect(content().string(messageSource.getMessage(MessageKey.POST_NOT_FOUND, new Object[]{INVALID_ID},Locale.ENGLISH)));
+                .andExpect(content().string(messageSource.getMessage(MessageKey.POST_NOT_FOUND, new Object[]{INVALID_ID}, Locale.ENGLISH)));
     }
 
 
@@ -204,7 +188,7 @@ class PostRestControllerTest extends BaseIntegrationTest {
 
         mockMvc.perform(get("/api/posts/{id}/image", 1L))
                 .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.valueOf("image/jpeg;charset=UTF-8")))
+                .andExpect(content().contentType(MediaType.IMAGE_JPEG))
                 .andExpect(header().string("Cache-Control", "no-store"))
                 .andExpect(content().bytes(givenImage));
     }
@@ -222,8 +206,8 @@ class PostRestControllerTest extends BaseIntegrationTest {
         mockMvc.perform(delete("/api/posts/{postId}", VALID_ID))
                 .andExpect(status().isOk());
 
-        Boolean existsPosts=jdbcTemplate.queryForObject("SELECT EXISTS (SELECT 1 FROM posts WHERE id = ?)", Boolean.class, VALID_ID);
-        Boolean existsComments=jdbcTemplate.queryForObject("SELECT EXISTS (SELECT 1 FROM comments WHERE post_id = ?)", Boolean.class, VALID_ID);
+        Boolean existsPosts = jdbcTemplate.queryForObject("SELECT EXISTS (SELECT 1 FROM posts WHERE id = ?)", Boolean.class, VALID_ID);
+        Boolean existsComments = jdbcTemplate.queryForObject("SELECT EXISTS (SELECT 1 FROM comments WHERE post_id = ?)", Boolean.class, VALID_ID);
 
         Assertions.assertThat(existsPosts).isFalse();
         Assertions.assertThat(existsComments).isFalse();
@@ -233,7 +217,7 @@ class PostRestControllerTest extends BaseIntegrationTest {
     void deletePostWithComments_shouldPostNotFound404Fail() throws Exception {
         mockMvc.perform(delete("/api/posts/{postId}", INVALID_ID))
                 .andExpect(status().isNotFound())
-                .andExpect(content().string(messageSource.getMessage(MessageKey.POST_NOT_FOUND, new Object[]{INVALID_ID},Locale.ENGLISH)));
+                .andExpect(content().string(messageSource.getMessage(MessageKey.POST_NOT_FOUND, new Object[]{INVALID_ID}, Locale.ENGLISH)));
     }
 
 }

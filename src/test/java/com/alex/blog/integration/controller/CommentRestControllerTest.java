@@ -4,16 +4,17 @@ import com.alex.blog.api.dto.CommentCreateDto;
 import com.alex.blog.api.dto.CommentUpdateDto;
 import com.alex.blog.service.MessageKey;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.alex.blog.integration.BaseIntegrationTest;
-import com.alex.blog.config.TestWebConfig;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.MessageSource;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -31,12 +32,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 
 
-@ContextConfiguration(classes = TestWebConfig.class)
-@WebAppConfiguration
-class CommentRestControllerTest extends BaseIntegrationTest {
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK)
+@Sql("classpath:data-test.sql")
+@AutoConfigureMockMvc
+@Transactional
+class CommentRestControllerTest {
 
-    @Autowired
-    private WebApplicationContext webApplicationContext;
     private final static Long VALID_ID = 1L;
     private final static Long INVALID_ID = 1000000L;
 
@@ -46,17 +47,9 @@ class CommentRestControllerTest extends BaseIntegrationTest {
     private JdbcTemplate jdbcTemplate;
     @Autowired
     private MessageSource messageSource;
+    @Autowired
     private MockMvc mockMvc;
 
-    @BeforeEach
-    void setUp() {
-
-        mockMvc = MockMvcBuilders
-                .webAppContextSetup(webApplicationContext)
-                .addFilter(new CharacterEncodingFilter("UTF-8", true))
-                .alwaysDo(print())
-                .build();
-    }
 
 
     @Test
@@ -64,7 +57,7 @@ class CommentRestControllerTest extends BaseIntegrationTest {
 
         mockMvc.perform(get("/api/posts/{postId}/comments/{commentId}", VALID_ID, VALID_ID))
                 .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.valueOf("application/json;charset=UTF-8")))
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.id").value(VALID_ID))
                 .andExpect(jsonPath("$.postId").value(VALID_ID));
     }
@@ -73,7 +66,6 @@ class CommentRestControllerTest extends BaseIntegrationTest {
     void getComments_shouldCommentNofFound404Fail() throws Exception {
         mockMvc.perform(get("/api/posts/{postId}/comments/{commentId}", VALID_ID, INVALID_ID))
                 .andExpect(status().isNotFound())
-                .andExpect(content().contentType(MediaType.valueOf("text/plain;charset=ISO-8859-1")))
                 .andExpect(content().string(messageSource.getMessage(MessageKey.COMMENT_NOT_FOUND, new Object[]{INVALID_ID}, Locale.ENGLISH)));
     }
 
@@ -81,7 +73,6 @@ class CommentRestControllerTest extends BaseIntegrationTest {
     void getComments_shouldPostNofFound404Fail() throws Exception {
         mockMvc.perform(get("/api/posts/{postId}/comments/{commentId}", INVALID_ID, VALID_ID))
                 .andExpect(status().isNotFound())
-                .andExpect(content().contentType(MediaType.valueOf("text/plain;charset=ISO-8859-1")))
                 .andExpect(content().string(messageSource.getMessage(MessageKey.POST_NOT_FOUND, new Object[]{INVALID_ID}, Locale.ENGLISH)));
     }
 
@@ -89,7 +80,7 @@ class CommentRestControllerTest extends BaseIntegrationTest {
     void getComments_shouldReturnCommentsJsonArraySuccess() throws Exception {
         mockMvc.perform(get("/api/posts/{postId}/comments", VALID_ID))
                 .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.valueOf("application/json;charset=UTF-8")))
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$", hasSize(2)))
                 .andExpect(jsonPath("$[0].id").value(VALID_ID))
                 .andExpect(jsonPath("$[0].postId").value(VALID_ID));
@@ -99,7 +90,6 @@ class CommentRestControllerTest extends BaseIntegrationTest {
     void getComments_shouldPostNotFound404Fail() throws Exception {
         mockMvc.perform(get("/api/posts/{postId}/comments", INVALID_ID))
                 .andExpect(status().isNotFound())
-                .andExpect(content().contentType(MediaType.valueOf("text/plain;charset=ISO-8859-1")))
                 .andExpect(content().string(messageSource.getMessage(MessageKey.POST_NOT_FOUND, new Object[]{INVALID_ID}, Locale.ENGLISH)));
     }
 
@@ -108,7 +98,7 @@ class CommentRestControllerTest extends BaseIntegrationTest {
         CommentUpdateDto givenDto = new CommentUpdateDto(VALID_ID, "Updated test comment1", VALID_ID);
 
         mockMvc.perform(put("/api/posts/{postId}/comments/{commentId}", VALID_ID, VALID_ID)
-                        .contentType(MediaType.valueOf("application/json;charset=UTF-8"))
+                        .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(givenDto))
                         .accept(MediaType.valueOf("application/json;charset=UTF-8")))
                 .andExpect(status().isOk())
@@ -120,8 +110,9 @@ class CommentRestControllerTest extends BaseIntegrationTest {
     @Test
     void updateComment_shouldCommentNotFound404Fail() throws Exception {
         CommentUpdateDto givenDto=new CommentUpdateDto(INVALID_ID,"Updated test comment1", VALID_ID);
+
         mockMvc.perform(put("/api/posts/{postId}/comments/{commentId}", VALID_ID, INVALID_ID)
-                        .contentType(MediaType.valueOf("application/json;charset=UTF-8"))
+                        .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(givenDto)))
                 .andExpect(status().isNotFound())
                 .andExpect(content().string(messageSource.getMessage(MessageKey.COMMENT_NOT_FOUND, new Object[]{INVALID_ID}, Locale.ENGLISH)));
@@ -132,7 +123,7 @@ class CommentRestControllerTest extends BaseIntegrationTest {
         CommentUpdateDto givenDto=new CommentUpdateDto(INVALID_ID,"Updated test comment1", INVALID_ID);
 
         mockMvc.perform(put("/api/posts/{postId}/comments/{commentId}", INVALID_ID, INVALID_ID)
-                        .contentType(MediaType.valueOf("application/json;charset=UTF-8"))
+                        .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(givenDto)))
                 .andExpect(status().isNotFound())
                 .andExpect(content().string(messageSource.getMessage(MessageKey.POST_NOT_FOUND, new Object[]{INVALID_ID}, Locale.ENGLISH)));
@@ -142,7 +133,7 @@ class CommentRestControllerTest extends BaseIntegrationTest {
         CommentCreateDto givenDto = new CommentCreateDto("NEW test comment1", INVALID_ID);
 
         mockMvc.perform(put("/api/posts/{postId}/comments/{commentId}", VALID_ID, INVALID_ID)
-                        .contentType(MediaType.valueOf("application/json;charset=UTF-8"))
+                        .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(givenDto)))
                 .andExpect(status().isBadRequest());
     }
@@ -154,9 +145,9 @@ class CommentRestControllerTest extends BaseIntegrationTest {
         CommentCreateDto givenDto = new CommentCreateDto("NEW test comment1", VALID_ID);
 
         mockMvc.perform(post("/api/posts/{postId}/comments", VALID_ID)
-                        .contentType(MediaType.valueOf("application/json;charset=UTF-8"))
+                        .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(givenDto))
-                        .accept(MediaType.valueOf("application/json;charset=UTF-8")))
+                        .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").value(7L))
                 .andExpect(jsonPath("$.text").value(givenDto.text()))
@@ -168,7 +159,7 @@ class CommentRestControllerTest extends BaseIntegrationTest {
         CommentCreateDto givenDto = new CommentCreateDto("NEW test comment1", VALID_ID);
 
         mockMvc.perform(post("/api/posts/{postId}/comments", INVALID_ID)
-                        .contentType(MediaType.valueOf("application/json;charset=UTF-8"))
+                        .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(givenDto)))
                 .andExpect(status().isBadRequest());
     }
@@ -179,7 +170,7 @@ class CommentRestControllerTest extends BaseIntegrationTest {
         CommentCreateDto givenDto = new CommentCreateDto("NEW test comment1", INVALID_ID);
 
         mockMvc.perform(post("/api/posts/{postId}/comments", INVALID_ID)
-                        .contentType(MediaType.valueOf("application/json;charset=UTF-8"))
+                        .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(givenDto)))
                 .andExpect(status().isNotFound())
                 .andExpect(content().string(messageSource.getMessage(MessageKey.POST_NOT_FOUND, new Object[]{INVALID_ID}, Locale.ENGLISH)));
