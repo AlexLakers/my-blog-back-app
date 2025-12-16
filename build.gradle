@@ -43,6 +43,10 @@ dependencies {
     options.annotationProcessorPath = configurations.annotationProcessor.get()
 }*/
 
+bootJar{
+    launchScript()
+}
+
 tasks.named('test') {
     useJUnitPlatform()
 }
