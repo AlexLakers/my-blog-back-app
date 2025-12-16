@@ -31,7 +31,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-
+@Transactional(readOnly = true)
 public class PostServiceImpl implements PostService {
     private final PostManagementRepository postManagementRepository;
     private final PostSearchRepository postSearchRepository;
@@ -43,7 +43,6 @@ public class PostServiceImpl implements PostService {
 
     @Override
     @Loggable
-    @Transactional(readOnly = true)
     public PostReadDto findOnePost(Long postId) {
         return postSearchRepository.findPostById(postId)
                 .map(postMapper::toPostReadDto)
@@ -62,7 +61,6 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
-    @Transactional(readOnly = true)
     @Loggable
     public PostPageDto findPageByCriteria(SearchDto searchDto) {
         Map<Boolean, List<String>> tokens = Arrays.stream(searchDto.search().split(" "))
