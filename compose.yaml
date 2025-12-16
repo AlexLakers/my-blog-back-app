@@ -1,26 +1,23 @@
-#version: '3.8'
 services:
   database:
-   # container_name: db
     image: postgres:17.0
     ports:
        - "5442:5432"
-   # restart: always
+    restart: always
     environment:
        - POSTGRES_USER=${DB_USER}
        - POSTGRES_PASSWORD=${DB_PASS}
        - POSTGRES_DB=${DB_NAME}
-    # volume и связанная с ним директория в контейнере
     volumes:
       - db-data:/var/lib/postgresql/data
 
+
   blog-service:
-    #container_name: app
     build:
       context: .
       dockerfile: Dockerfile
     image: blog
-   # restart: on-failure
+    restart: always
     environment:
       - DB_USER=${DB_USER}
       - DB_PASS=${DB_PASS}
@@ -31,16 +28,6 @@ services:
       - "8080:8080"
     depends_on:
       - database
-
-  #gw:
-   # container_name: gw
-   # image: nginx:1.29.0-perl
-   # ports:
-    #  - "80:80"
-   # volumes:
-    #  - ./proxy/nginx-practicum-proxy.conf:/etc/nginx/conf.d/default.conf:ro
-    #depends_on:
-    #  - app
 
 volumes:
   db-data:
