@@ -1,0 +1,62 @@
+buildscript {
+    ext {
+        springBootVersion = '3.5.8'
+        dependencyManagementVersion = '1.1.7'
+    }
+}
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version "${springBootVersion}"
+    id 'io.spring.dependency-management' version "${dependencyManagementVersion}"
+}
+
+group = 'com.alex.blog'
+version = '0.0.1-SNAPSHOT'
+description = 'my-blog-back-app'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+ext {
+    springBootVersion = '3.5.8'
+    dependencyManagementVersion = '1.1.7'
+    mapstructVersion = '1.6.2'
+    lombokMapstructBindingVersion = '0.2.0'
+    hibernateValidatorVersion = '8.0.0.Final'
+}
+
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-data-jdbc'
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-aop'
+
+    implementation 'org.postgresql:postgresql'
+    testImplementation 'com.h2database:h2'
+
+    implementation "org.mapstruct:mapstruct:${mapstructVersion}"
+    annotationProcessor "org.mapstruct:mapstruct-processor:${mapstructVersion}"
+
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+
+    annotationProcessor "org.projectlombok:lombok-mapstruct-binding:${lombokMapstructBindingVersion}"
+
+    implementation "org.hibernate:hibernate-validator:${hibernateValidatorVersion}"
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+bootJar{
+    launchScript()
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}

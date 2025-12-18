@@ -12,7 +12,6 @@ public class CorsConfig implements WebMvcConfigurer {
                 .allowedOrigins(
                         "http://localhost",
                         "http://localhost:80",
-                      //  "http://localhost:3000", // React/Vue dev server
                         "http://127.0.0.1",
                         "http://127.0.0.1:80"
                 )

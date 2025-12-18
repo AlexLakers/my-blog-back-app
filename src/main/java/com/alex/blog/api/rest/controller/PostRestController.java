@@ -42,6 +42,7 @@ public class PostRestController {
 
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<PostReadDto> create(@RequestBody PostCreateDto postCreateDto) {
+
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(postService.savePost(postCreateDto));
@@ -60,7 +61,7 @@ public class PostRestController {
 
         return ResponseEntity
                 .status(HttpStatus.OK)
-                .body(postService.findPageByCriteria(searchDto/*new SearchDto(search, pageNumber, pageSize)*/));
+                .body(postService.findPageByCriteria(searchDto));
     }
 
     @PutMapping(value = "/{postId}/image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -74,7 +75,6 @@ public class PostRestController {
 
     @GetMapping(value = "/{postId}/image")
     public ResponseEntity<byte[]> getImage(@PathVariable("postId") Long postId) {
-        System.out.println(postId);
         byte[] image = postService.getImage(postId);
         return image.length > 0
                 ? ResponseEntity.status(HttpStatus.OK).contentType(MediaType.IMAGE_JPEG).cacheControl(CacheControl.noStore()).body(image)
